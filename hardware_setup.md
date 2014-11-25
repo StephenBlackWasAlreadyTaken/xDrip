@@ -1,7 +1,9 @@
 ## What you need to get started
 Note, the following describes what I am currently using and recommend, it could definitely change and you can definitely use other components. Just know that this is all that it has been tested with!
 
-* An Android Device running 4.3 or higher with BLE support
+* An Android Device
+ * Must be running 4.3 to support BLE
+ * Also must have BLE support
 * [A Wixel](http://www.pololu.com/product/1337)
  * I recommend the one without headers(linked) if you want to use wires, if you plan to use a breadboard or make a custom PCB feel free to get the one with headers.
 * [An HM-10 BLE Module](http://www.amazon.com/SunFounder-Bluetooth-Master-Compatible-Arduino/dp/B00N7CA8Y6/ref=sr_1_cc_1?s=aps&ie=UTF8&qid=1416917892&sr=1-1-catcorr&keywords=hm10+sunfounder)
