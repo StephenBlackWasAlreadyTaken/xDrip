@@ -23,4 +23,4 @@ Note, the following describes what I am currently using and recommend, it could 
  * I used a regular not terrifying soldering iron for the rest of it!
  
  ## Putting it together!
- ![SETUP](/http://i.imgur.com/EIGki5R.png)
+ ![SETUP](http://i.imgur.com/EIGki5R.png)
