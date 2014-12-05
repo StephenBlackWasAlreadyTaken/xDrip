@@ -11,7 +11,7 @@ Note, the following describes what I am currently using and recommend, it could 
  * The android app specificly looks for the uuid of the HM10, any other device may require changes to the android app in order to work
 * [Battery Power](http://www.adafruit.com/products/258)
  * I use the one linked and have no problem getting through a day, I have not done extensive battery testing at this point
- * *EDIT: that one was lasting over 6 days, which seemed like a waste of space, now I use a 500mAh from the same site, Ill update the link one day!
+ * *EDIT: that one was lasting over 6 days, which seemed like a waste of space, now I use [this 500mAh](http://www.adafruit.com/products/1578) Which gets me two days no problem!
 * [Battery Charger](http://www.adafruit.com/products/1904)
  * I use this one, its nice and smallish and does the trick.
  * If you find a nicer smaller one PLEASE LET ME KNOW (I wound up breaking the top bit off of this so I could make it fit in a new enclosure)
@@ -26,3 +26,7 @@ Note, the following describes what I am currently using and recommend, it could 
  
  ## Putting it together!
  ![SETUP](http://i.imgur.com/EIGki5R.png)
+
+I also tossed it all into a "Crush Proof Pill Box" from CVS (Cost like $2)
+![Imgur](http://i.imgur.com/uB40JUG.jpg)
+![Imgur](http://i.imgur.com/8xIdz5w.jpg)
