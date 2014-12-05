@@ -1,41 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
-    <meta charset='utf-8'>
+    <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+    <title>Dexdrip by StephenBlackWasAlreadyTaken</title>
 
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
     <!--[if lt IE 9]>
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-
-    <title>Dexdrip by StephenBlackWasAlreadyTaken</title>
   </head>
-
   <body>
-    <header>
-      <div class="inner">
+    <div class="wrapper">
+      <header>
         <h1>Dexdrip</h1>
-        <h2>Android Application that collects dexcom signals over BLE and allows calibrations</h2>
-        <a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip" class="button"><small>View project on</small> GitHub</a>
-      </div>
-    </header>
+        <p>Android Application that collects dexcom signals over BLE and allows calibrations</p>
 
-    <div id="content-wrapper">
-      <div class="inner clearfix">
-        <section id="main-content">
-          <h3>
-<a id="dexdrip" class="anchor" href="#dexdrip" aria-hidden="true"><span class="octicon octicon-link"></span></a>DexDrip</h3>
+        <p class="view"><a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip">View the Project on GitHub <small>StephenBlackWasAlreadyTaken/DexDrip</small></a></p>
 
-<p>This is my DexDrip Project page! Its used to catch raw transmissions from your Dexcom transmitter and then, using a calibration algorithm written by me (as in, you shouldn't trust it) give you a nice realtime graph of your BG levels.</p>
 
-<p><img src="http://i.imgur.com/f0ADBIB.jpg" alt="Imgur"></p>
+        <ul>
+          <li><a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h2>
+<a id="dexdrip" class="anchor" href="#dexdrip" aria-hidden="true"><span class="octicon octicon-link"></span></a>DexDrip</h2>
 
-<p><img src="http://i.imgur.com/WGbutFT.jpg" alt="Imgur"></p>
+<p>DexDrip allows you to use your phone as a Dexcom Receiver (Wirelessly! through the magic of bluetooth!)</p>
+
+<h4>
+<a id="currently-there-are-2-parts" class="anchor" href="#currently-there-are-2-parts" aria-hidden="true"><span class="octicon octicon-link"></span></a>Currently there are 2 parts</h4>
+
+<ul>
+<li><p>one is the <a href="https://github.com/StephenBlackWasAlreadyTaken/wixel-DexDrip">Relay</a> <a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip/blob/gh-pages/hardware_setup.md">(the wixel and bluetooth component)</a> which catches Dexcom transmissions them and then sends them out over BT</p></li>
+<li><p>The second part is the <a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip">Android App</a>, this receives that data and graphs it out for you (and allows you to enter calibrations)</p></li>
+<li><p>Both are available and ready for you to use!</p></li>
+</ul>
+
+<h3>
+<a id="pictures" class="anchor" href="#pictures" aria-hidden="true"><span class="octicon octicon-link"></span></a>Pictures</h3>
+
+<ul>
+<li><p><img src="http://i.imgur.com/8xIdz5w.jpg" alt="Imgur"></p></li>
+<li><p><img src="http://i.imgur.com/c6kvzHe.jpg" alt="Imgur"></p></li>
+<li><p><img src="http://i.imgur.com/fled9b6.png" alt="Imgur"></p></li>
+</ul>
 
 <h3>
 <a id="stay-up-to-date" class="anchor" href="#stay-up-to-date" aria-hidden="true"><span class="octicon octicon-link"></span></a>Stay Up to Date!!</h3>
@@ -46,71 +60,38 @@
 <a id="its-a-work-in-proggress" class="anchor" href="#its-a-work-in-proggress" aria-hidden="true"><span class="octicon octicon-link"></span></a>ITS A WORK IN PROGGRESS</h3>
 
 <ul>
-<li>There are no notifications</li>
+<li>There are some notifications</li>
 <li>There is no uploading</li>
 <li>There is very little error handling</li>
-<li>There is bad behavior around slope generation after missed readings</li>
 <li>Im not even beginning to use the filtered data for error handling yet</li>
-<li>It has NOT been tested on the first few days of a sensor so it will likely be WAY OFF</li>
 </ul>
-
-<h3>
-<a id="q-and-a-time" class="anchor" href="#q-and-a-time" aria-hidden="true"><span class="octicon octicon-link"></span></a>Q and A time:</h3>
-
-<h5>
-<a id="should-i-trust-any-of-the-information-dexdrip-shows-me" class="anchor" href="#should-i-trust-any-of-the-information-dexdrip-shows-me" aria-hidden="true"><span class="octicon octicon-link"></span></a>Should I trust any of the information DexDrip shows me?</h5>
-
-<p>NO!!!</p>
-
-<h5>
-<a id="should-i-make-any-decisions-based-off-of-what-dexdrip-shows-me" class="anchor" href="#should-i-make-any-decisions-based-off-of-what-dexdrip-shows-me" aria-hidden="true"><span class="octicon octicon-link"></span></a>Should I make any decisions based off of what DexDrip shows me?</h5>
-
-<p>NO!!!</p>
-
-<h5>
-<a id="should-i-stop-carrying-around-my-dexcom-receiver" class="anchor" href="#should-i-stop-carrying-around-my-dexcom-receiver" aria-hidden="true"><span class="octicon octicon-link"></span></a>Should I stop carrying around my Dexcom receiver?</h5>
-
-<p>NO!!!</p>
 
 <h3>
 <a id="recap" class="anchor" href="#recap" aria-hidden="true"><span class="octicon octicon-link"></span></a>Recap:</h3>
 
-<p>Dont trust it, its a proof of concept, it may as well be making up silly numbers with a random number generator.</p>
+<p>Its in its early stages! Expect a lot of updates in the coming weeks!</p>
 
 <h1>
-<a id="got-it-cool" class="anchor" href="#got-it-cool" aria-hidden="true"><span class="octicon octicon-link"></span></a>Got it? Cool</h1>
+<a id="lets-do-it" class="anchor" href="#lets-do-it" aria-hidden="true"><span class="octicon octicon-link"></span></a>LETS DO IT!!</h1>
 
 <ul>
-<li>[What you will need &amp; Diagrams](<a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip/blob/gh-pages/hardware_setup.md">https://github.com/StephenBlackWasAlreadyTaken/DexDrip/blob/gh-pages/hardware_setup.md</a>
-</li>
-<li><a href="https://github.com/StephenBlackWasAlreadyTaken/wixel-DexDrip">My Current Wixel code</a></li>
-<li><a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip">Android code (No docs yet though)</a></li>
+<li><a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip/blob/gh-pages/hardware_setup.md">What you will need &amp; Diagrams</a></li>
+<li><a href="https://github.com/StephenBlackWasAlreadyTaken/wixel-DexDrip">Wixel App</a></li>
+<li><a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip">Android App</a></li>
 </ul>
 
 <h1>
 <a id="want-to-help-out" class="anchor" href="#want-to-help-out" aria-hidden="true"><span class="octicon octicon-link"></span></a>Want to help out!!??</h1>
 
-<p>AWESOME, let me know, put up some PRS, lets do this!!</p>
-        </section>
-
-        <aside id="sidebar">
-          <a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip/zipball/master" class="button">
-            <small>Download</small>
-            .zip file
-          </a>
-          <a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip/tarball/master" class="button">
-            <small>Download</small>
-            .tar.gz file
-          </a>
-
-          <p class="repo-owner"><a href="https://github.com/StephenBlackWasAlreadyTaken/DexDrip"></a> is maintained by <a href="https://github.com/StephenBlackWasAlreadyTaken">StephenBlackWasAlreadyTaken</a>.</p>
-
-          <p>This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
-        </aside>
-      </div>
+<p>AWESOME, let me know, put up some PRS, lets make it awesome!</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/StephenBlackWasAlreadyTaken">StephenBlackWasAlreadyTaken</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
     </div>
-
-            <script type="text/javascript">
+    <script src="javascripts/scale.fix.js"></script>
+              <script type="text/javascript">
             var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
             document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
           </script>
