@@ -30,7 +30,7 @@
             android:value="DexDrip.db" />
         <meta-data
             android:name="AA_DB_VERSION"
-            android:value="11" />
+            android:value="12" />
 
         <!-- <provider android:authorities="com.example" android:exported="false" android:name="com.activeandroid.content.ContentProvider" /> -->
 
@@ -98,8 +98,8 @@
             android:label="@string/title_activity_fake_numbers" >
         </activity>
         <activity
-            android:name="com.eveningoutpost.dexdrip.LoginActivity"
-            android:label="@string/title_activity_login"
+            android:name=".RegistrationActivity"
+            android:label="Register"
             android:windowSoftInputMode="adjustResize|stateVisible" >
         </activity>
         <activity
@@ -117,6 +117,11 @@
         <activity
             android:name="com.eveningoutpost.dexdrip.SettingsActivity"
             android:label="@string/title_activity_settings" >
+        </activity>
+        <activity
+            android:name="com.eveningoutpost.dexdrip.SignInActivity"
+            android:label="Sign In"
+            android:windowSoftInputMode="adjustResize|stateVisible" >
         </activity>
     </application>
 

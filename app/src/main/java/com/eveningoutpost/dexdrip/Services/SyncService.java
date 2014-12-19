@@ -8,10 +8,13 @@ import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
 
+import com.eveningoutpost.dexdrip.Models.User;
 import com.eveningoutpost.dexdrip.UtilityModels.BgSendQueue;
 import com.eveningoutpost.dexdrip.UtilityModels.CalibrationSendQueue;
 import com.eveningoutpost.dexdrip.UtilityModels.RestCalls;
 import com.eveningoutpost.dexdrip.UtilityModels.SensorSendQueue;
+
+import java.util.Date;
 
 public class SyncService extends Service {
     int mStartMode;
@@ -27,6 +30,8 @@ public class SyncService extends Service {
         AlarmManager alarmManager = (AlarmManager) this.getSystemService(Context.ALARM_SERVICE);
         alarmManager.cancel(pending);
 
+        attemptSend();
+
         startSleep();
         return mStartMode;
     }
@@ -38,15 +43,22 @@ public class SyncService extends Service {
     }
 
     public void attemptSend() {
-        if (false) {
-            for (SensorSendQueue job : SensorSendQueue.queue()) {
-                RestCalls.sendSensor(job);
-            }
-            for (CalibrationSendQueue job : CalibrationSendQueue.queue()) {
-                RestCalls.sendCalibration(job);
-            }
-            for (BgSendQueue job : BgSendQueue.queue()) {
-                RestCalls.sendBgReading(job);
+        User user = User.currentUser();
+        if (user != null) {
+            if (user.password != null && user.password.length() > 1) {
+                if (user.token_expiration != 0 && user.token_expiration >= new Date().getTime()) {
+                    for (SensorSendQueue job : SensorSendQueue.queue()) {
+                        RestCalls.sendSensor(job);
+                    }
+                    for (CalibrationSendQueue job : CalibrationSendQueue.queue()) {
+                        RestCalls.sendCalibration(job);
+                    }
+                    for (BgSendQueue job : BgSendQueue.queue()) {
+                        RestCalls.sendBgReading(job);
+                    }
+                } else {
+                    user.authenticate();
+                }
             }
         }
     }
