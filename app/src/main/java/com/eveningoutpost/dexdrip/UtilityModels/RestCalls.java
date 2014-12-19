@@ -5,6 +5,7 @@ import android.util.Log;
 import com.eveningoutpost.dexdrip.Interfaces.BgReadingInterface;
 import com.eveningoutpost.dexdrip.Interfaces.CalibrationInterface;
 import com.eveningoutpost.dexdrip.Interfaces.SensorInterface;
+import com.eveningoutpost.dexdrip.Interfaces.UserInterface;
 import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.Calibration;
 import com.eveningoutpost.dexdrip.Sensor;
@@ -33,8 +34,6 @@ public class RestCalls {
             .excludeFieldsWithoutExposeAnnotation()
             .registerTypeAdapter(Date.class, new DateTypeAdapter())
             .create();
-
-
 
     public static void sendBgReading(final BgSendQueue bgSendQueue) {
         User user = User.currentUser();
@@ -143,6 +142,13 @@ public class RestCalls {
         CalibrationInterface calibrationInterface =
                 adapter.create(CalibrationInterface.class);
         return calibrationInterface;
+    }
+
+    public static UserInterface userInterface() {
+        RestAdapter adapter = adapterBuilder().build();
+        UserInterface userInterface =
+                adapter.create(UserInterface.class);
+        return userInterface;
     }
 
     public static RestAdapter.Builder adapterBuilder() {

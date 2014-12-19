@@ -38,7 +38,7 @@ public class BgSendQueue extends Model {
     public static List<BgSendQueue> queue() {
         return new Select()
                 .from(BgSendQueue.class)
-                .where("success !=", true)
+                .where("success != ?", true)
                 .orderBy("_ID desc")
                 .execute();
     }
