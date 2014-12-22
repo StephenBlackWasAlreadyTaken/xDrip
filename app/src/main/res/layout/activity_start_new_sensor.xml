@@ -23,15 +23,17 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/datePicker"
-        android:calendarViewShown="false"
         android:layout_alignTop="@+id/datePicker"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:datePickerMode="spinner"
+        android:calendarViewShown="false" />
 
     <TimePicker
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/timePicker"
         android:layout_centerVertical="true"
+        android:timePickerMode="spinner"
         android:layout_alignParentStart="true" />
 
     <TextView
