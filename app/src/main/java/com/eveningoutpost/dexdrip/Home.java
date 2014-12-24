@@ -10,14 +10,17 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
+import android.util.Log;
 import android.widget.TextView;
 
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.Calibration;
 import com.eveningoutpost.dexdrip.Services.DexCollectionService;
+import com.eveningoutpost.dexdrip.Services.WixelReader;
 import com.eveningoutpost.dexdrip.UtilityModels.BgGraphBuilder;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
@@ -30,10 +33,12 @@ import lecho.lib.hellocharts.view.PreviewLineChartView;
 
 
 public class Home extends Activity implements NavigationDrawerFragment.NavigationDrawerCallbacks {
+    private final static String TAG = Home.class.getSimpleName();
     private String menu_name = "DexDrip";
     private NavigationDrawerFragment mNavigationDrawerFragment;
     private LineChartView chart;
     private PreviewLineChartView previewChart;
+    private WixelReader mWixelReader;
     Viewport tempViewport = new Viewport();
     Viewport holdViewport = new Viewport();
     public float left;
@@ -53,8 +58,33 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         PreferenceManager.setDefaultValues(this, R.xml.pref_general, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_bg_notification, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_data_sync, false);
-        startService(new Intent(this, DexCollectionService.class));
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            startService(new Intent(this, DexCollectionService.class));
+        }
         setContentView(R.layout.activity_home);
+
+        // Start the socket thread
+        try
+        {
+            mWixelReader = new WixelReader(this);
+            mWixelReader.start();
+        }catch(IOException e)
+        {
+           Log.e(TAG, "cought IOException, could not start the wixel thread");
+        }
+
+    }
+    @Override
+    public void onDestroy()
+	{
+        super.onDestroy();
+        // stop the socket thread
+        mWixelReader.Stop();
+        try {
+            mWixelReader.join();
+        } catch (InterruptedException e) {
+            Log.e(TAG, "cought InterruptedException, could not wait for the wixel thread to exit");
+        }
 
     }
 
@@ -151,7 +181,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         final TextView currentBgValueText = (TextView) findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
         notificationText.setText("");
-        if(ActiveBluetoothDevice.first() != null) {
+        if(ActiveBluetoothDevice.first() != null || mWixelReader.IsConfigured()) {
             if (Sensor.isActive() && (Sensor.currentSensor().started_at + (60000 * 60 * 2)) < new Date().getTime()) {
                 if (BgReading.latest(2).size() > 1) {
                     List<Calibration> calibrations = Calibration.latest(2);
@@ -173,7 +203,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 notificationText.setText("Now start your sensor");
             }
         } else {
-            notificationText.setText("First pair with your BT device!");
+            notificationText.setText("First pair with your BT device, or configure your wifi wixel reader!");
         }
         mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), menu_name, this);

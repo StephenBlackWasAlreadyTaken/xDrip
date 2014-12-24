@@ -12,6 +12,8 @@ import com.eveningoutpost.dexdrip.Services.DexCollectionService;
 public class AutoStart extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        context.startService(new Intent(context, DexCollectionService.class));
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            context.startService(new Intent(context, DexCollectionService.class));
+    }
     }
 }
