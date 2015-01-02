@@ -52,7 +52,7 @@ public class StartNewSensor extends Activity implements NavigationDrawerFragment
     @Override
     public void onNavigationDrawerItemSelected(int position) {
         NavDrawerBuilder navDrawerBuilder = new NavDrawerBuilder();
-        List<String> menu_option_list = navDrawerBuilder.nav_drawer_options();
+        List<String> menu_option_list = navDrawerBuilder.nav_drawer_options(getApplicationContext());
         int menu_position = menu_option_list.indexOf(menu_name);
 
         if (position != menu_position) {
@@ -62,28 +62,6 @@ public class StartNewSensor extends Activity implements NavigationDrawerFragment
             finish();
         }
 
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_start_new_sensor, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     public void addListenerOnButton() {

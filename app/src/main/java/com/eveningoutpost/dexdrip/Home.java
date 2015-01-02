@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
@@ -15,8 +16,9 @@ import android.widget.TextView;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.Calibration;
-import com.eveningoutpost.dexdrip.Services.DexCollectionService;
+import com.eveningoutpost.dexdrip.Services.WixelReader;
 import com.eveningoutpost.dexdrip.UtilityModels.BgGraphBuilder;
+import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 
 import java.text.DecimalFormat;
 import java.util.Date;
@@ -34,6 +36,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     private NavigationDrawerFragment mNavigationDrawerFragment;
     private LineChartView chart;
     private PreviewLineChartView previewChart;
+    SharedPreferences prefs;
     Viewport tempViewport = new Viewport();
     Viewport holdViewport = new Viewport();
     public float left;
@@ -53,14 +56,32 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         PreferenceManager.setDefaultValues(this, R.xml.pref_general, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_bg_notification, false);
         PreferenceManager.setDefaultValues(this, R.xml.pref_data_sync, false);
-        startService(new Intent(this, DexCollectionService.class));
+        PreferenceManager.setDefaultValues(this, R.xml.pref_wifi, false);
+
+
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        checkEula();
         setContentView(R.layout.activity_home);
 
+    }
+
+    public void checkEula() {
+        boolean IUnderstand = prefs.getBoolean("I_understand", false);
+        if (!IUnderstand) {
+            Intent intent = new Intent(getApplicationContext(), LicenseAgreementActivity.class);
+            startActivity(intent);
+            finish();
+        }
     }
 
     @Override
     protected void onResume(){
         super.onResume();
+        checkEula();
+
+        CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter();
+        collectionServiceStarter.start(getApplicationContext());
+
         _broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context ctx, Intent intent) {
@@ -151,7 +172,9 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         final TextView currentBgValueText = (TextView) findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
         notificationText.setText("");
-        if(ActiveBluetoothDevice.first() != null) {
+        boolean isBTWixel = CollectionServiceStarter.isBTWixel(getApplicationContext());
+        if((isBTWixel &&ActiveBluetoothDevice.first() != null) ||
+            (!isBTWixel && WixelReader.IsConfigured(getApplicationContext()))) {
             if (Sensor.isActive() && (Sensor.currentSensor().started_at + (60000 * 60 * 2)) < new Date().getTime()) {
                 if (BgReading.latest(2).size() > 1) {
                     List<Calibration> calibrations = Calibration.latest(2);
@@ -173,15 +196,21 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 notificationText.setText("Now start your sensor");
             }
         } else {
-            notificationText.setText("First pair with your BT device!");
+            if(isBTWixel) {
+                if((android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2)) {
+                    notificationText.setText("First pair with your BT device");
+                } else {
+                    notificationText.setText("Your device has to be android 4.3 and up to support Bluetooth wixel");
+                }
+            } else {
+                notificationText.setText("First configure your wifi wixel reader ip addresses");
+            }
         }
         mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), menu_name, this);
     }
 
     public void displayCurrentInfo() {
-
-
         DecimalFormat df = new DecimalFormat("#");
         df.setMaximumFractionDigits(0);
 
@@ -202,7 +231,15 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
             } else {
                 if (lastBgreading != null) {
                     estimate = BgReading.activePrediction();
-                    currentBgValueText.setText(df.format(estimate) + " " + BgReading.slopeArrow());
+                    String stringEstimate;
+                    if (estimate >= 400) {
+                        stringEstimate = "HIGH";
+                    } else if (estimate <= 40) {
+                        stringEstimate = "LOW";
+                    } else {
+                        stringEstimate = df.format(estimate);
+                    }
+                    currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow());
                 }
             }
             if(estimate <= bgGraphBuilder.lowMark) {

@@ -27,6 +27,10 @@ proguard/
 
 #local
 /local.properties
-/.idea/workspace.xml
-/.idea/libraries
-.DS_Store
+/.idea/*
+.idea/vcs.xml
+*.idea*
+*manifest-merger-debug-report.txt
+*manifest-merger-release-report.txt
+*.ds_store
+*.DS_Store

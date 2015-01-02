@@ -100,6 +100,18 @@ public class BgReading extends Model {
     @Column(name = "snyced")
     public boolean synced;
 
+    public String displayValue() {
+        DecimalFormat df = new DecimalFormat("#");
+        df.setMaximumFractionDigits(0);
+        if (calculated_value >= 400) {
+            return "HIGH";
+        } else if (calculated_value >= 40) {
+            return df.format(calculated_value);
+        } else {
+            return "LOW";
+        }
+    }
+
     public static double activeSlope() {
         BgReading bgReading = BgReading.lastNoSenssor();
         double slope = (2 * bgReading.a * (new Date().getTime() + BESTOFFSET)) + bgReading.b;
@@ -133,7 +145,6 @@ public class BgReading extends Model {
                 bgReading.time_since_sensor_started = bgReading.timestamp - sensor.started_at;
                 bgReading.synced = false;
 
-
                 //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
                 double adjust_for = (86400000 * 1.8) - bgReading.time_since_sensor_started;
                 if (adjust_for > 0) {
@@ -142,9 +153,8 @@ public class BgReading extends Model {
                 } else {
                     bgReading.age_adjusted_raw_value = (raw_data / 1000);
                 }
-
+                
                 bgReading.save();
-
                 bgReading.perform_calculations();
             } else {
 
@@ -170,16 +180,21 @@ public class BgReading extends Model {
                 BgReading lastBgReading = BgReading.last();
                 if (lastBgReading != null && lastBgReading.calibration != null) {
                     if (lastBgReading.calibration_flag == true && ((lastBgReading.timestamp + (60000 * 20)) > bgReading.timestamp)) {
-                        lastBgReading.calibration.rawValueOverride(BgReading.weightedAverageRaw(lastBgReading.timestamp, bgReading.timestamp, lastBgReading.calibration.timestamp, lastBgReading.age_adjusted_raw_value, bgReading.age_adjusted_raw_value));
+                        lastBgReading.calibration.rawValueOverride(BgReading.weightedAverageRaw(lastBgReading.timestamp, bgReading.timestamp, lastBgReading.calibration.timestamp, lastBgReading.age_adjusted_raw_value, bgReading.age_adjusted_raw_value), context);
                     }
                 }
                 bgReading.calculated_value = ((calibration.slope * bgReading.age_adjusted_raw_value) + calibration.intercept);
+                if (bgReading.calculated_value <= 40) {
+                    bgReading.calculated_value = 40;
+                } else if (bgReading.calculated_value >= 400) {
+                    bgReading.calculated_value = 400;
+                }
                 Log.w(TAG, "NEW VALUE CALCULATED AT: " + bgReading.calculated_value);
 
                 bgReading.save();
                 bgReading.perform_calculations();
                 Notifications.notificationSetter(context);
-                BgSendQueue.addToQueue(bgReading, "create");
+                BgSendQueue.addToQueue(bgReading, "create", context);
             }
         }
         Log.w("BG GSON: ",bgReading.toS());
@@ -204,6 +219,27 @@ public class BgReading extends Model {
             arrow = "\u2191";
         } else {
             arrow = "\u21c8";
+        }
+        return arrow;
+    }
+
+    public String slopeName() {
+        double slope_by_minute = calculated_value_slope * 60000;
+        String arrow = "NONE";
+        if (slope_by_minute <= (-3.5)) {
+            arrow = "DoubleDown";
+        } else if (slope_by_minute <= (-2)) {
+            arrow = "SingleDown";
+        } else if (slope_by_minute <= (-1)) {
+            arrow = "FortyFiveDown";
+        } else if (slope_by_minute <= (1)) {
+            arrow = "Flat";
+        } else if (slope_by_minute <= (2)) {
+            arrow = "FortyFiveUp";
+        } else if (slope_by_minute <= (3.5)) {
+            arrow = "SingleUp";
+        } else {
+            arrow = "DoubleUp";
         }
         return arrow;
     }
@@ -255,8 +291,8 @@ public class BgReading extends Model {
                 .execute();
     }
 
-    public static List<BgReading> last24Minutes() {
-        double timestamp = (new Date().getTime()) - (60000 * 25);
+    public static List<BgReading> last30Minutes() {
+        double timestamp = (new Date().getTime()) - (60000 * 30);
         return new Select()
                 .from(BgReading.class)
                 .where("timestamp >= " + timestamp)
