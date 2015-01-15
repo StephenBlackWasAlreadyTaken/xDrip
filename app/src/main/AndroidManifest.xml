@@ -115,6 +115,11 @@
             android:name=".LicenseAgreementActivity"
             android:label="@string/title_activity_license_agreement" >
         </activity>
+
+        <service
+            android:name=".Services.BgAlertService"
+            android:exported="false" >
+        </service>
     </application>
 
 </manifest>
