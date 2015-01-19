@@ -8,6 +8,7 @@ import com.activeandroid.annotation.Column;
 import com.activeandroid.annotation.Table;
 import com.activeandroid.query.Select;
 
+import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.UUID;
 
@@ -38,23 +39,26 @@ public class TransmitterData extends Model {
                 StringBuilder data_string = new StringBuilder();
         if (len < 6) { return null; };
 
-        for (int i = 0; i < len; ++i) {
+/*        for (int i = 0; i < len; ++i) {
             data_string.append((char) buffer[i]);
         }
         String[] data = data_string.toString().split("\\s+");
 
-        randomDelay(100, 2000);
+  */      randomDelay(100, 2000);
         TransmitterData lastTransmitterData = TransmitterData.last();
-        if (lastTransmitterData != null && lastTransmitterData.raw_data == Integer.parseInt(data[0]) && Math.abs(lastTransmitterData.timestamp - new Date().getTime()) < (10000)) { //Stop allowing duplicate data, its bad!
+/*        if (lastTransmitterData != null && lastTransmitterData.raw_data == Integer.parseInt(data[0]) && Math.abs(lastTransmitterData.timestamp - new Date().getTime()) < (10000)) { //Stop allowing duplicate data, its bad!
             return null;
         }
-
+*/
         TransmitterData transmitterData = new TransmitterData();
-        if(data.length > 1) {
+ /*       if(data.length > 1) {
             transmitterData.sensor_battery_level = Integer.parseInt(data[1]);
         }
         if (Integer.parseInt(data[0]) < 1000) { return null; } // Sometimes the HM10 sends the battery level and readings in separate transmissions, filter out these incomplete packets!
         transmitterData.raw_data = Integer.parseInt(data[0]);
+*/
+        transmitterData.raw_data = ByteBuffer.wrap(buffer).getInt(2);
+        transmitterData.sensor_battery_level = ByteBuffer.wrap(buffer).getShort(10);
         transmitterData.timestamp = new Date().getTime();
         transmitterData.uuid = UUID.randomUUID().toString();
 

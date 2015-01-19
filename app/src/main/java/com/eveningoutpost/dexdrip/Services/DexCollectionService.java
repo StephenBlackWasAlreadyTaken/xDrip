@@ -44,6 +44,7 @@ import com.eveningoutpost.dexdrip.UtilityModels.ForegroundServiceStarter;
 import com.eveningoutpost.dexdrip.UtilityModels.HM10Attributes;
 import com.eveningoutpost.dexdrip.Models.TransmitterData;
 
+import java.nio.ByteBuffer;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
@@ -65,6 +66,7 @@ public class DexCollectionService extends Service {
     private ForegroundServiceStarter foregroundServiceStarter;
     private int mConnectionState = STATE_DISCONNECTED;
     private BluetoothDevice device;
+    private BluetoothGattCharacteristic mCharacteristic;
     int mStartMode;
 
     private Context mContext = null;
@@ -207,6 +209,7 @@ public class DexCollectionService extends Service {
                     Log.w(TAG, "Service Found");
                     for (BluetoothGattCharacteristic gattCharacteristic : gattService.getCharacteristics()) {
                         Log.w(TAG, "Characteristic Found");
+                        mCharacteristic=gattCharacteristic;
                         setCharacteristicNotification(gattCharacteristic, true);
                     }
                 }
@@ -221,9 +224,10 @@ public class DexCollectionService extends Service {
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
         }
+
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
@@ -243,6 +247,37 @@ public class DexCollectionService extends Service {
         if (data != null && data.length > 0) {
             setSerialDataToTransmitterRawData(data, data.length);
         }
+    }
+
+    private boolean sendTxId(ByteBuffer message){
+        //check mBluetoothGatt is available
+        if (mBluetoothGatt == null) {
+            Log.e(TAG, "lost connection");
+            return false;
+        }
+
+        byte[] value = message.array();
+        mCharacteristic.setValue(value);
+        boolean status = mBluetoothGatt.writeCharacteristic(mCharacteristic);
+        return status;
+    }
+
+    private Integer convertSrc(final String Src) {
+        Integer res = 0;
+        res |= getSrcValue(Src.charAt(0)) << 20;
+        res |= getSrcValue(Src.charAt(1)) << 15;
+        res |= getSrcValue(Src.charAt(2)) << 10;
+        res |= getSrcValue(Src.charAt(3)) << 5;
+        res |= getSrcValue(Src.charAt(4));
+        return res;
+    }
+    private int getSrcValue(char ch){
+        int i;
+        char[] cTable = { '0', '1', '2', '3', '4', '5', '6', '7','8', '9', 'A', 'B', 'C', 'D', 'E', 'F','G', 'H', 'J', 'K', 'L', 'M', 'N', 'P','Q', 'R', 'S', 'T', 'U', 'W', 'X', 'Y' };
+        for(i=0; i<cTable.length; i++){
+            if(cTable[i] == ch)  break;
+        }
+        return i;
     }
 
     public class LocalBinder extends Binder {
@@ -355,16 +390,47 @@ public class DexCollectionService extends Service {
     public void setSerialDataToTransmitterRawData(byte[] buffer, int len) {
 
         Log.w(TAG, "received some data!");
-        TransmitterData transmitterData = TransmitterData.create(buffer, len);
-        if (transmitterData != null) {
-            Sensor sensor = Sensor.currentSensor();
-            if (sensor != null) {
-                BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
-                sensor.latest_battery_level = transmitterData.sensor_battery_level;
-                sensor.save();
-            } else {
-                Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
+        Integer DexSrc;
+        Integer TransmitterID;
+        String TxId;
+        ByteBuffer txidMessage = ByteBuffer.allocate(6);
+        if (buffer[0] == 0x06 && buffer[1] == -15) {
+            //We have a Beacon packet.  Get the TXID value and compare with dex_txid
+            DexSrc = ByteBuffer.wrap(buffer).getInt(2);
+            TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid", "00000");
+            TransmitterID = convertSrc(TxId);
+            if ( Integer.compare(DexSrc, TransmitterID) !=0 ) {
+                txidMessage.put(0,(byte)0x06);
+                txidMessage.put(1,(byte)0x01);
+                txidMessage.putInt(2,TransmitterID);
+                sendTxId(txidMessage);
             }
         }
+        if (buffer[0] == 0x10 && buffer[1] == 0x00) {
+            //we have a data packet.  Check to see if the TXID is what we are expecting.
+            DexSrc = (Integer)ByteBuffer.wrap(buffer).getInt(2);
+            TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid" ,"00000");
+            TransmitterID = convertSrc(TxId);
+            if ( TransmitterID != DexSrc ) {
+                 txidMessage.put(0,(byte)0x06);
+                 txidMessage.put(1,(byte)0x01);
+                 txidMessage.putInt(2,TransmitterID);
+                 sendTxId(txidMessage);
+             }
+        //All is OK, so process it.
+
+            TransmitterData transmitterData = TransmitterData.create(buffer, len);
+            if (transmitterData != null) {
+                Sensor sensor = Sensor.currentSensor();
+                if (sensor != null) {
+                    BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
+                    sensor.latest_battery_level = transmitterData.sensor_battery_level;
+                    sensor.save();
+                } else {
+                    Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
+                }
+            }
+        }
+
     }
 }
