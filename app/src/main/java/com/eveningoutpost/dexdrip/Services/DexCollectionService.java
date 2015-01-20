@@ -45,6 +45,7 @@ import com.eveningoutpost.dexdrip.UtilityModels.HM10Attributes;
 import com.eveningoutpost.dexdrip.Models.TransmitterData;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.UUID;
@@ -390,28 +391,32 @@ public class DexCollectionService extends Service {
     public void setSerialDataToTransmitterRawData(byte[] buffer, int len) {
 
         Log.w(TAG, "received some data!");
-        Integer DexSrc;
-        Integer TransmitterID;
+        int DexSrc;
+        int TransmitterID;
         String TxId;
+        ByteBuffer tmpBuffer = ByteBuffer.allocate(len);
+        tmpBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        tmpBuffer.put(buffer,0,len);
         ByteBuffer txidMessage = ByteBuffer.allocate(6);
+        txidMessage.order(ByteOrder.LITTLE_ENDIAN);
         if (buffer[0] == 0x06 && buffer[1] == -15) {
             //We have a Beacon packet.  Get the TXID value and compare with dex_txid
-            DexSrc = ByteBuffer.wrap(buffer).getInt(2);
+            DexSrc = tmpBuffer.getInt(2);
             TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid", "00000");
             TransmitterID = convertSrc(TxId);
             if ( Integer.compare(DexSrc, TransmitterID) !=0 ) {
                 txidMessage.put(0,(byte)0x06);
                 txidMessage.put(1,(byte)0x01);
-                txidMessage.putInt(2,TransmitterID);
+                txidMessage.putInt(2, TransmitterID);
                 sendTxId(txidMessage);
             }
         }
         if (buffer[0] == 0x10 && buffer[1] == 0x00) {
             //we have a data packet.  Check to see if the TXID is what we are expecting.
-            DexSrc = (Integer)ByteBuffer.wrap(buffer).getInt(2);
+            DexSrc = tmpBuffer.getInt(2);
             TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid" ,"00000");
             TransmitterID = convertSrc(TxId);
-            if ( TransmitterID != DexSrc ) {
+            if ( Integer.compare(DexSrc, TransmitterID) !=0 ) {
                  txidMessage.put(0,(byte)0x06);
                  txidMessage.put(1,(byte)0x01);
                  txidMessage.putInt(2,TransmitterID);

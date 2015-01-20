@@ -9,16 +9,14 @@ import com.activeandroid.annotation.Table;
 import com.activeandroid.query.Select;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Date;
 import java.util.UUID;
 
-/**
- * Created by stephenblack on 11/6/14.
- */
 
 @Table(name = "TransmitterData", id = BaseColumns._ID)
 public class TransmitterData extends Model {
-    private final static String TAG = BgReading.class.getSimpleName();
+    //private final static String TAG = BgReading.class.getSimpleName();
 
     @Column(name = "timestamp", index = true)
     public long timestamp;
@@ -36,8 +34,11 @@ public class TransmitterData extends Model {
     public String uuid;
 
     public static TransmitterData create(byte[] buffer, int len) {
-                StringBuilder data_string = new StringBuilder();
-        if (len < 6) { return null; };
+        //StringBuilder data_string = new StringBuilder();
+        ByteBuffer txData = ByteBuffer.allocate(len);
+        txData.order(ByteOrder.LITTLE_ENDIAN);
+        txData.put(buffer, 0, len);
+        if (len < 6) { return null; }
 
 /*        for (int i = 0; i < len; ++i) {
             data_string.append((char) buffer[i]);
@@ -45,7 +46,7 @@ public class TransmitterData extends Model {
         String[] data = data_string.toString().split("\\s+");
 
   */      randomDelay(100, 2000);
-        TransmitterData lastTransmitterData = TransmitterData.last();
+        //TransmitterData lastTransmitterData = TransmitterData.last();
 /*        if (lastTransmitterData != null && lastTransmitterData.raw_data == Integer.parseInt(data[0]) && Math.abs(lastTransmitterData.timestamp - new Date().getTime()) < (10000)) { //Stop allowing duplicate data, its bad!
             return null;
         }
@@ -57,8 +58,8 @@ public class TransmitterData extends Model {
         if (Integer.parseInt(data[0]) < 1000) { return null; } // Sometimes the HM10 sends the battery level and readings in separate transmissions, filter out these incomplete packets!
         transmitterData.raw_data = Integer.parseInt(data[0]);
 */
-        transmitterData.raw_data = ByteBuffer.wrap(buffer).getInt(2);
-        transmitterData.sensor_battery_level = ByteBuffer.wrap(buffer).getShort(10);
+        transmitterData.raw_data = txData.getInt(2);
+        transmitterData.sensor_battery_level = txData.getShort(10);
         transmitterData.timestamp = new Date().getTime();
         transmitterData.uuid = UUID.randomUUID().toString();
 
