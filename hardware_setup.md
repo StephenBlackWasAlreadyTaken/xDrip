@@ -22,8 +22,7 @@ Note, the following describes what I am currently using and recommend, it could 
 * Solder and Soldering Iron
  * Or a breadboard if you dont mind the bulk
  * Or a custom made PCB (and one for me too please?)
- * I needed a fairly hot soldering iron (40w) to remove the pins from the HM10, be careful not to burn the boards though
- * I used a regular not terrifying soldering iron for the rest of it!
+ * I used a cheap 15w soldering iron in order to solder and remove the pins from the HM10 (you can probably go a bit higher but I wouldnt go crazy)
  
  ## Putting it together!
  ![SETUP](http://i.imgur.com/EIGki5R.png)
