@@ -212,7 +212,7 @@ public class Calibration extends Model {
             Log.w("CALIBRATION: ", calibration.toS());
             CalibrationRequest.createOffset(calibration.bg, 45);
         }
-        Notifications.notificationSetter(context);
+        Notifications.getInstance().notificationSetter(context);
     }
 
     public static Calibration create(double bg, Context context) {
@@ -266,7 +266,7 @@ public class Calibration extends Model {
                 calculate_w_l_s();
                 adjustRecentBgReadings();
                 CalibrationSendQueue.addToQueue(calibration, context);
-                Notifications.notificationSetter(context);
+                Notifications.getInstance().notificationSetter(context);
                 Calibration.requestCalibrationIfRangeTooNarrow();
             }
         } else {
