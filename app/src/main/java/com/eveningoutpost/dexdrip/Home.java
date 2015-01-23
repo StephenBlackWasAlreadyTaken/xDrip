@@ -172,13 +172,13 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         final TextView notificationText = (TextView)findViewById(R.id.notices);
         notificationText.setText("");
         boolean isBTWixel = CollectionServiceStarter.isBTWixel(getApplicationContext());
-        if((isBTWixel &&ActiveBluetoothDevice.first() != null) ||
-            (!isBTWixel && WixelReader.IsConfigured(getApplicationContext()))) {
+        boolean isDexbridge = CollectionServiceStarter.isDexbridge(getApplicationContext());
+        if(((isBTWixel || isDexbridge) && ActiveBluetoothDevice.first() != null) || ((!isBTWixel || !isDexbridge) && WixelReader.IsConfigured(getApplicationContext()))) {
             if (Sensor.isActive() && (Sensor.currentSensor().started_at + (60000 * 60 * 2)) < new Date().getTime()) {
                 if (BgReading.latest(2).size() > 1) {
                     List<Calibration> calibrations = Calibration.latest(2);
                     if (calibrations.size() > 1) {
-                        if ((calibrations.get(0).slope <= 0.8 || calibrations.get(0).slope >= 1.35) && (calibrations.get(1).slope > 0.8 && calibrations.get(1).slope < 1.35)) {
+                        if (calibrations.get(0).possible_bad != null && calibrations.get(0).possible_bad == true && calibrations.get(1).possible_bad != null && calibrations.get(1).possible_bad == false) {
                             notificationText.setText("Possible bad calibration slope, please have a glass of water, wash hands, then recalibrate in a few!");
                         }
                         displayCurrentInfo();
@@ -195,7 +195,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 notificationText.setText("Now start your sensor");
             }
         } else {
-            if(isBTWixel) {
+            if(isBTWixel || isDexbridge) {
                 if((android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2)) {
                     notificationText.setText("First pair with your BT device");
                 } else {
