@@ -1,8 +1,8 @@
 package com.eveningoutpost.dexdrip.UtilityModels;
 
 /**
- * For integration.
- */
+* For integration.
+*/
 public interface Intents {
     String RECEIVER_PERMISSION = "com.eveningoutpost.dexdrip.permissions.RECEIVE_BG_ESTIMATE";
 
@@ -12,5 +12,4 @@ public interface Intents {
     String EXTRA_BG_SLOPE_NAME = "com.eveningoutpost.dexdrip.Extras.BgSlopeName";
     String EXTRA_SENSOR_BATTERY = "com.eveningoutpost.dexdrip.Extras.SensorBattery";
     String EXTRA_TIMESTAMP = "com.eveningoutpost.dexdrip.Extras.Time";
-
 }

@@ -48,6 +48,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.UUID;
 
 
@@ -68,6 +70,9 @@ public class DexCollectionService extends Service {
     private int mConnectionState = STATE_DISCONNECTED;
     private BluetoothDevice device;
     private BluetoothGattCharacteristic mCharacteristic;
+    //queues for GattDescriptor and GattCharacteristic to ensure we get all messages and can clear the the message once it is processed.
+    private Queue<BluetoothGattDescriptor> descriptorWriteQueue = new LinkedList<BluetoothGattDescriptor>();
+    private Queue<BluetoothGattCharacteristic> characteristicReadQueue = new LinkedList<BluetoothGattCharacteristic>();
     int mStartMode;
 
     private Context mContext = null;
@@ -390,50 +395,53 @@ public class DexCollectionService extends Service {
 
     public void setSerialDataToTransmitterRawData(byte[] buffer, int len) {
 
-        Log.w(TAG, "received some data!");
-        int DexSrc;
-        int TransmitterID;
-        String TxId;
-        ByteBuffer tmpBuffer = ByteBuffer.allocate(len);
-        tmpBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        tmpBuffer.put(buffer,0,len);
-        ByteBuffer txidMessage = ByteBuffer.allocate(6);
-        txidMessage.order(ByteOrder.LITTLE_ENDIAN);
-        if (buffer[0] == 0x06 && buffer[1] == -15) {
-            //We have a Beacon packet.  Get the TXID value and compare with dex_txid
-            DexSrc = tmpBuffer.getInt(2);
-            TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid", "00000");
-            TransmitterID = convertSrc(TxId);
-            if ( Integer.compare(DexSrc, TransmitterID) !=0 ) {
-                txidMessage.put(0,(byte)0x06);
-                txidMessage.put(1,(byte)0x01);
-                txidMessage.putInt(2, TransmitterID);
-                sendTxId(txidMessage);
+        Log.w(TAG, "setSerialDataToTransmitterRawData received some data!");
+        if (PreferenceManager.getDefaultSharedPreferences(this).getString("dex_collection_method", "Dexbridge") == "Dexbridge") {
+            int DexSrc;
+            int TransmitterID;
+            String TxId;
+            ByteBuffer tmpBuffer = ByteBuffer.allocate(len);
+            tmpBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            tmpBuffer.put(buffer, 0, len);
+            ByteBuffer txidMessage = ByteBuffer.allocate(6);
+            txidMessage.order(ByteOrder.LITTLE_ENDIAN);
+            if (buffer[0] == 0x06 && buffer[1] == -15) {
+                //We have a Beacon packet.  Get the TXID value and compare with dex_txid
+                DexSrc = tmpBuffer.getInt(2);
+                TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid", "00000");
+                TransmitterID = convertSrc(TxId);
+                if (Integer.compare(DexSrc, TransmitterID) != 0) {
+                    Log.w(TAG, "TXID wrong.  Sending correct TXID.");
+                    txidMessage.put(0, (byte) 0x06);
+                    txidMessage.put(1, (byte) 0x01);
+                    txidMessage.putInt(2, TransmitterID);
+                    sendTxId(txidMessage);
+                }
+            }
+            if (buffer[0] == 0x10 && buffer[1] == 0x00) {
+                //we have a data packet.  Check to see if the TXID is what we are expecting.
+                DexSrc = tmpBuffer.getInt(2);
+                TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid", "00000");
+                TransmitterID = convertSrc(TxId);
+                if (Integer.compare(DexSrc, TransmitterID) != 0) {
+                    Log.w(TAG, "TXID wrong.  Sending correct TXID.");
+                    txidMessage.put(0, (byte) 0x06);
+                    txidMessage.put(1, (byte) 0x01);
+                    txidMessage.putInt(2, TransmitterID);
+                    sendTxId(txidMessage);
+                }
+                //All is OK, so process it.
             }
         }
-        if (buffer[0] == 0x10 && buffer[1] == 0x00) {
-            //we have a data packet.  Check to see if the TXID is what we are expecting.
-            DexSrc = tmpBuffer.getInt(2);
-            TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid" ,"00000");
-            TransmitterID = convertSrc(TxId);
-            if ( Integer.compare(DexSrc, TransmitterID) !=0 ) {
-                 txidMessage.put(0,(byte)0x06);
-                 txidMessage.put(1,(byte)0x01);
-                 txidMessage.putInt(2,TransmitterID);
-                 sendTxId(txidMessage);
-             }
-        //All is OK, so process it.
-
-            TransmitterData transmitterData = TransmitterData.create(buffer, len);
-            if (transmitterData != null) {
-                Sensor sensor = Sensor.currentSensor();
-                if (sensor != null) {
-                    BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
-                    sensor.latest_battery_level = transmitterData.sensor_battery_level;
-                    sensor.save();
-                } else {
-                    Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
-                }
+        TransmitterData transmitterData = TransmitterData.create(buffer, len);
+        if (transmitterData != null) {
+            Sensor sensor = Sensor.currentSensor();
+            if (sensor != null) {
+                BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
+                sensor.latest_battery_level = transmitterData.sensor_battery_level;
+                sensor.save();
+            } else {
+                Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
             }
         }
 

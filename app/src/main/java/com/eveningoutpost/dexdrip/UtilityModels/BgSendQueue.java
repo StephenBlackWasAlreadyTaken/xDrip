@@ -79,7 +79,6 @@ public class BgSendQueue extends Model {
                 task.execute();
             }
         }
-
         if(prefs.getBoolean("broadcast_data_through_intents", false)) {
             Log.i("SENSOR QUEUE:", "Broadcast data");
             final Bundle bundle = new Bundle();

@@ -3,11 +3,13 @@
     <string-array name="DexCollectionMethods">
         <item>Bluetooth Wixel</item>
         <item>Wifi Wixel</item>
+        <item>Dexbridge</item>
     </string-array>
 
     <string-array name="DexCollectionMethodValues">
         <item>BluetoothWixel</item>
         <item>WifiWixel</item>
+        <item>DexbridgeWixel</item>
     </string-array>
 
 

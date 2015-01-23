@@ -3,7 +3,6 @@
     package="com.eveningoutpost.dexdrip" >
 
     <permission android:name="com.eveningoutpost.dexdrip.permissions.RECEIVE_BG_ESTIMATE"/>
-
     <uses-feature
         android:name="android.hardware.bluetooth_le"
         android:required="true" />

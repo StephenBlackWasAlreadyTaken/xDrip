@@ -21,7 +21,7 @@
         <EditTextPreference
             android:key="dex_txid"
             android:title="Dexcom Transmitter ID"
-            android:summary="ID of your Dexcom Transmitter, lik 12AB3"
+            android:summary="ID of your Dexcom Transmitter, eg 12AB3"
             android:defaultValue="00000" />
     </PreferenceCategory>
 
