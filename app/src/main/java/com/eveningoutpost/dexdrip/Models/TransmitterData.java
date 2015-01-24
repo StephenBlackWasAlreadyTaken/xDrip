@@ -39,6 +39,7 @@ public class TransmitterData extends Model {
         if (len < 6) { return null; }
         if (buffer[0] == 0x10 && buffer[1] == 0x00) {
             //this is a dexbridge packet.  Process accordingly.
+            Log.w(TAG, "create Processing a Dexbridge packet");
             ByteBuffer txData = ByteBuffer.allocate(len);
             txData.order(ByteOrder.LITTLE_ENDIAN);
             txData.put(buffer, 0, len);
@@ -53,6 +54,7 @@ public class TransmitterData extends Model {
             return transmitterData;
         } else {
             //this is NOT a dexbridge packet.  Process accordingly.
+            Log.w(TAG, "create Processing a BTWixel or IPWixel packet");
             StringBuilder data_string = new StringBuilder();
 
             for (int i = 0; i < len; ++i) {

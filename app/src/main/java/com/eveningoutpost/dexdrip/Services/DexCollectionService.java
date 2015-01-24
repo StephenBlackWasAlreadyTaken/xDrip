@@ -115,6 +115,45 @@ public class DexCollectionService extends Service {
         Log.w(TAG, "SERVICE STOPPED");
     }
 
+    public void writeGattDescriptor(BluetoothGattDescriptor d){
+        //put the descriptor into the write queue
+        descriptorWriteQueue.add(d);
+        //if there is only 1 item in the queue, then write it.  If more than 1, we handle asynchronously in the callback above
+        if(descriptorWriteQueue.size() == 1){
+            mBluetoothGatt.writeDescriptor(d);
+        }
+    }
+
+    public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+        if (status == BluetoothGatt.GATT_SUCCESS) {
+            Log.d(TAG, "Callback: Wrote GATT Descriptor successfully.");
+        }
+        else{
+            Log.d(TAG, "Callback: Error writing GATT Descriptor: "+ status);
+        }
+        descriptorWriteQueue.remove();  //pop the item that we just finishing writing
+        //if there is more to write, do it!
+        if(descriptorWriteQueue.size() > 0)
+            mBluetoothGatt.writeDescriptor(descriptorWriteQueue.element());
+        else if(characteristicReadQueue.size() > 0)
+            mBluetoothGatt.readCharacteristic(characteristicReadQueue.element());
+    }
+
+    public void onCharacteristicRead(BluetoothGatt gatt,
+                                     BluetoothGattCharacteristic characteristic,
+                                     int status) {
+        characteristicReadQueue.remove();
+        if (status == BluetoothGatt.GATT_SUCCESS) {
+            broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+        }
+        else{
+            Log.d(TAG, "onCharacteristicRead error: " + status);
+        }
+
+        if(characteristicReadQueue.size() > 0)
+            mBluetoothGatt.readCharacteristic(characteristicReadQueue.element());
+    }
+
     //TODO: Move this somewhere more reusable
     public void listenForChangeInSettings() {
         SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
@@ -373,7 +412,7 @@ public class DexCollectionService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
-        mBluetoothGatt.readCharacteristic(characteristic);
+            mBluetoothGatt.readCharacteristic(characteristic);
     }
 
     public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic,
@@ -396,7 +435,8 @@ public class DexCollectionService extends Service {
     public void setSerialDataToTransmitterRawData(byte[] buffer, int len) {
 
         Log.w(TAG, "setSerialDataToTransmitterRawData received some data!");
-        if (PreferenceManager.getDefaultSharedPreferences(this).getString("dex_collection_method", "Dexbridge") == "Dexbridge") {
+        if (PreferenceManager.getDefaultSharedPreferences(this).getString("dex_collection_method", "DexbridgeWixel").compareTo("DexbridgeWixel") ==0) {
+            Log.w(TAG, "setSerialDataToTransmitterRawData -Dealing with Dexbridge packet!");
             int DexSrc;
             int TransmitterID;
             String TxId;
@@ -407,6 +447,7 @@ public class DexCollectionService extends Service {
             txidMessage.order(ByteOrder.LITTLE_ENDIAN);
             if (buffer[0] == 0x06 && buffer[1] == -15) {
                 //We have a Beacon packet.  Get the TXID value and compare with dex_txid
+                Log.w(TAG, "setSerialDataToTransmitterRawData Received Beacon packet.");
                 DexSrc = tmpBuffer.getInt(2);
                 TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid", "00000");
                 TransmitterID = convertSrc(TxId);
@@ -417,9 +458,11 @@ public class DexCollectionService extends Service {
                     txidMessage.putInt(2, TransmitterID);
                     sendTxId(txidMessage);
                 }
+                return;
             }
             if (buffer[0] == 0x10 && buffer[1] == 0x00) {
                 //we have a data packet.  Check to see if the TXID is what we are expecting.
+                Log.w(TAG, "setSerialDataToTransmitterRawData Received Data packet");
                 DexSrc = tmpBuffer.getInt(2);
                 TxId = PreferenceManager.getDefaultSharedPreferences(this).getString("dex_txid", "00000");
                 TransmitterID = convertSrc(TxId);
@@ -431,6 +474,12 @@ public class DexCollectionService extends Service {
                     sendTxId(txidMessage);
                 }
                 //All is OK, so process it.
+                //first, tell the wixel it is OK to sleep.
+                Log.d(TAG,"Sending Data packet Ack, to put wixel to sleep");
+                ByteBuffer ackMessage = ByteBuffer.allocate(2);
+                ackMessage.put(0, (byte)0x02);
+                ackMessage.put(1, (byte)0xF0);
+                sendTxId(ackMessage);
             }
         }
         TransmitterData transmitterData = TransmitterData.create(buffer, len);
