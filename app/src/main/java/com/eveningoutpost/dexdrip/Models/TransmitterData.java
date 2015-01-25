@@ -1,6 +1,5 @@
 package com.eveningoutpost.dexdrip.Models;
 
-import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
 import android.util.Log;
 
@@ -14,11 +13,13 @@ import java.nio.ByteOrder;
 import java.util.Date;
 import java.util.UUID;
 
+/**
+ * Created by stephenblack on 11/6/14.
+ */
 
 @Table(name = "TransmitterData", id = BaseColumns._ID)
 public class TransmitterData extends Model {
-    //private final static String TAG = BgReading.class.getSimpleName();
-    private final static String TAG = TransmitterData.class.getSimpleName();
+    private final static String TAG = BgReading.class.getSimpleName();
 
     @Column(name = "timestamp", index = true)
     public long timestamp;
@@ -36,7 +37,7 @@ public class TransmitterData extends Model {
     public String uuid;
 
     public static TransmitterData create(byte[] buffer, int len) {
-        if (len < 6) { return null; }
+        if (len < 6) { return null; };
         if (buffer[0] == 0x10 && buffer[1] == 0x00) {
             //this is a dexbridge packet.  Process accordingly.
             Log.w(TAG, "create Processing a Dexbridge packet");

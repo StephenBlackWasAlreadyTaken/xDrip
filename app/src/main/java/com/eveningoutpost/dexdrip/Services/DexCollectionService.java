@@ -109,18 +109,18 @@ public class DexCollectionService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.w(TAG,"onDestroy entered");
+        Log.w(TAG, "onDestroy entered");
         setRetryTimer();
         close();
         foregroundServiceStarter.stop();
         Log.w(TAG, "SERVICE STOPPED");
     }
 
-    public void writeGattDescriptor(BluetoothGattDescriptor d){
+    public void writeGattDescriptor(BluetoothGattDescriptor d) {
         //put the descriptor into the write queue
         descriptorWriteQueue.add(d);
         //if there is only 1 item in the queue, then write it.  If more than 1, we handle asynchronously in the callback above
-        if(descriptorWriteQueue.size() == 1){
+        if (descriptorWriteQueue.size() == 1) {
             mBluetoothGatt.writeDescriptor(d);
         }
     }
@@ -130,7 +130,7 @@ public class DexCollectionService extends Service {
     public void listenForChangeInSettings() {
         SharedPreferences.OnSharedPreferenceChangeListener listener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
-                if(key.compareTo("run_service_in_foreground") == 0) {
+                if (key.compareTo("run_service_in_foreground") == 0) {
                     if (prefs.getBoolean("run_service_in_foreground", false)) {
                         foregroundServiceStarter = new ForegroundServiceStarter(getApplicationContext(), dexCollectionService);
                         foregroundServiceStarter.start();
@@ -142,7 +142,7 @@ public class DexCollectionService extends Service {
                         setRetryTimer();
                     }
                 }
-                if(key.compareTo("dex_collection_method") == 0) {
+                if (key.compareTo("dex_collection_method") == 0) {
                     CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter();
                     collectionServiceStarter.start(getApplicationContext());
                 }
@@ -199,9 +199,9 @@ public class DexCollectionService extends Service {
     public void setRetryTimer() {
         Calendar calendar = Calendar.getInstance();
         final long time_delay = calendar.getTimeInMillis() + 20000;
-        AlarmManager alarm = (AlarmManager)getSystemService(ALARM_SERVICE);
+        AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
         alarm.set(alarm.RTC_WAKEUP, time_delay, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
-        Log.w(TAG, "Retry set for" +  ((time_delay - (int) (new Date().getTime())) / (60000)) + "mins from now!");
+        Log.w(TAG, "Retry set for" + ((time_delay - (int) (new Date().getTime())) / (60000)) + "mins from now!");
     }
 
     private final BluetoothGattCallback mGattCallback;
@@ -251,31 +251,28 @@ public class DexCollectionService extends Service {
                 } else {
                     Log.w(TAG, "onCharacteristicRead error: " + status);
                 }
-
                 if (characteristicReadQueue.size() > 0)
                     mBluetoothGatt.readCharacteristic(characteristicReadQueue.element());
                 Log.w(TAG, "onCharacteristicRead exited.");
             }
 
-
             @Override
-            public void onCharacteristicChanged(BluetoothGatt gatt,
-                                                BluetoothGattCharacteristic characteristic) {
-                Log.w(TAG,"onCharacteristicChanged - broadcasting characteristic");
+            public void onCharacteristicChanged (BluetoothGatt gatt,
+                BluetoothGattCharacteristic characteristic){
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
 
             @Override
-            public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-                if (status == BluetoothGatt.GATT_SUCCESS) {
-                    Log.d(TAG, "Callback: Wrote GATT Descriptor successfully.");
-                }
-                else{
-                    Log.d(TAG, "Callback: Error writing GATT Descriptor: "+ status);
+            public void onDescriptorWrite (BluetoothGatt gatt, BluetoothGattDescriptor descriptor,
+                int status){
+               if (status == BluetoothGatt.GATT_SUCCESS) {
+                   Log.d(TAG, "Callback: Wrote GATT Descriptor successfully.");
+                } else {
+                    Log.d(TAG, "Callback: Error writing GATT Descriptor: " + status);
                 }
                 descriptorWriteQueue.remove();  //pop the item that we just finishing writing
 
-                if(descriptorWriteQueue.size() > 0) // if there is more to write, do it!
+                if (descriptorWriteQueue.size() > 0) // if there is more to write, do it!
                     mBluetoothGatt.writeDescriptor(descriptorWriteQueue.element());
                 /* else if(characteristicReadQueue.size() > 0)
                     mBluetoothGatt.readCharacteristic(characteristicReadQueue.element());
@@ -285,6 +282,8 @@ public class DexCollectionService extends Service {
         };
     }
 
+    private void broadcastUpdate(final String action) {
+    }
 
     private void broadcastUpdate(final String action,
                                  final BluetoothGattCharacteristic characteristic) {
@@ -342,7 +341,6 @@ public class DexCollectionService extends Service {
 
     @Override
     public boolean onUnbind(Intent intent) {
-        Log.w(TAG, "onUnbind - closing connection");
         close();
         return super.onUnbind(intent);
     }
@@ -414,6 +412,14 @@ public class DexCollectionService extends Service {
         mConnectionState = STATE_DISCONNECTED;
     }
 
+    public void readCharacteristic(BluetoothGattCharacteristic characteristic) {
+        if (mBluetoothAdapter == null || mBluetoothGatt == null) {
+            Log.w(TAG, "BluetoothAdapter not initialized");
+            return;
+        }
+        mBluetoothGatt.readCharacteristic(characteristic);
+    }
+
     public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic,
                                               boolean enabled) {
         if (mBluetoothAdapter == null || mBluetoothGatt == null) {
@@ -422,6 +428,7 @@ public class DexCollectionService extends Service {
         }
         Log.w(TAG, "setCharacteristicNotification - UUID FOUND: " + characteristic.getUuid());
         mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+        Log.w(TAG, "UUID FOUND: " + characteristic.getUuid());
         if (DexDripDataCharacteristic.equals(characteristic.getUuid())) {
             Log.w(TAG, "setCharacteristicNotification - UUID MATCH FOUND!!! " + characteristic.getUuid());
             BluetoothGattDescriptor descriptor = characteristic.getDescriptor(
@@ -490,13 +497,13 @@ public class DexCollectionService extends Service {
         if (transmitterData != null) {
             Sensor sensor = Sensor.currentSensor();
             if (sensor != null) {
-                BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
                 sensor.latest_battery_level = transmitterData.sensor_battery_level;
                 sensor.save();
+
+                BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
             } else {
                 Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
             }
         }
-
     }
 }

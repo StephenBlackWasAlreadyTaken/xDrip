@@ -23,6 +23,6 @@
             android:title="Dexcom Transmitter ID"
             android:summary="ID of your Dexcom Transmitter, eg 12AB3"
             android:defaultValue="00000" />
-    </PreferenceCategory>
+	</PreferenceCategory>
 
 </PreferenceScreen>
