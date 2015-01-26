@@ -22,6 +22,7 @@ import android.widget.Toast;
 
 import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
+import com.eveningoutpost.dexdrip.Services.BluetoothReader;
 import com.eveningoutpost.dexdrip.Services.DexCollectionService;
 
 import java.util.ArrayList;
@@ -170,8 +171,15 @@ public class BluetoothScan extends ListActivity implements NavigationDrawerFragm
             bluetooth_adapter.stopLeScan(mLeScanCallback);
             is_scanning = false;
         }
-        startService(serviceIntent);
-        startActivity(intent);
+        if (device.getType() != BluetoothDevice.DEVICE_TYPE_LE)
+        {
+            Log.d(TAG, "device non BLE");
+            BluetoothReader.startBluetoothReader(device, getApplicationContext());
+        } else {
+            startService(serviceIntent);
+            startActivity(intent);
+        }
+
         finish();
     }
 
