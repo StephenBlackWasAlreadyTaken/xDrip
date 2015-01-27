@@ -22,6 +22,7 @@
             android:key="dex_txid"
             android:title="Dexcom Transmitter ID"
             android:summary="ID of your Dexcom Transmitter, eg 12AB3"
+            android:textAllCaps="true"
             android:defaultValue="00000" />
 	</PreferenceCategory>
 

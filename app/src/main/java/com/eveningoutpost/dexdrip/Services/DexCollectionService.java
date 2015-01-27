@@ -198,7 +198,7 @@ public class DexCollectionService extends Service {
 
     public void setRetryTimer() {
         Calendar calendar = Calendar.getInstance();
-        final long time_delay = calendar.getTimeInMillis() + 20000;
+        final long time_delay = calendar.getTimeInMillis() + 5000;
         AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
         alarm.set(alarm.RTC_WAKEUP, time_delay, PendingIntent.getService(this, 0, new Intent(this, DexCollectionService.class), 0));
         Log.w(TAG, "Retry set for" + ((time_delay - (int) (new Date().getTime())) / (60000)) + "mins from now!");
@@ -454,7 +454,7 @@ public class DexCollectionService extends Service {
             tmpBuffer.put(buffer, 0, len);
             ByteBuffer txidMessage = ByteBuffer.allocate(6);
             txidMessage.order(ByteOrder.LITTLE_ENDIAN);
-            if (buffer[0] == 0x06 && buffer[1] == -15) {
+            if (buffer[0] == 0x07 && buffer[1] == -15) {
                 //We have a Beacon packet.  Get the TXID value and compare with dex_txid
                 Log.w(TAG, "setSerialDataToTransmitterRawData Received Beacon packet.");
                 //DexSrc starts at Byte 2 of a Beacon packet.
@@ -470,7 +470,7 @@ public class DexCollectionService extends Service {
                 }
                 return;
             }
-            if (buffer[0] == 0x10 && buffer[1] == 0x00) {
+            if (buffer[0] == 0x11 && buffer[1] == 0x00) {
                 //we have a data packet.  Check to see if the TXID is what we are expecting.
                 Log.w(TAG, "setSerialDataToTransmitterRawData Received Data packet");
                 //DexSrc starts at Byte 12 of a data packet.
@@ -500,7 +500,8 @@ public class DexCollectionService extends Service {
                 sensor.latest_battery_level = transmitterData.sensor_battery_level;
                 sensor.save();
 
-                BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
+                //BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
+                BgReading bgReading = BgReading.create(transmitterData.raw_data, transmitterData.filtered_data, this);
             } else {
                 Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
             }
