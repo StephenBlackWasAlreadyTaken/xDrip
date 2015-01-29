@@ -49,6 +49,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
 
     public BgGraphBuilder bgGraphBuilder;
     BroadcastReceiver _broadcastReceiver;
+    BroadcastReceiver bgReadingCreateReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +91,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 }
             }
         };
+
         registerReceiver(_broadcastReceiver, new IntentFilter(Intent.ACTION_TIME_TICK));
         mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), menu_name, this);
@@ -210,26 +212,36 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     }
 
     public void displayCurrentInfo() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean predictBG = prefs.getBoolean("predictBG", false);
         DecimalFormat df = new DecimalFormat("#");
         df.setMaximumFractionDigits(0);
-
         final TextView currentBgValueText = (TextView)findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
         if ((currentBgValueText.getPaintFlags() & Paint.STRIKE_THRU_TEXT_FLAG) > 0) {
             currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
         }
         BgReading lastBgreading = BgReading.lastNoSenssor();
-
         if (lastBgreading != null) {
             double estimate = 0;
             if ((new Date().getTime()) - (60000 * 11) - lastBgreading.timestamp > 0) {
                 notificationText.setText("Signal Missed");
-                estimate = BgReading.estimated_bg(lastBgreading.timestamp + (6000 * 7));
+                if(!predictBG){
+                    currentBgValueText.setText(bgGraphBuilder.unitized_string(BgReading.activePrediction()));
+                    estimate=lastBgreading.calculated_value;
+
+                } else {
+                    estimate = BgReading.estimated_bg(lastBgreading.timestamp + (6000 * 7));
+                }
                 currentBgValueText.setText(bgGraphBuilder.unitized_string(BgReading.activePrediction()));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                if (lastBgreading != null) {
-                    estimate = BgReading.activePrediction();
+                if(!predictBG){
+                    estimate=lastBgreading.calculated_value;
+                    String stringEstimate = bgGraphBuilder.unitized_string(estimate);
+                    currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow(lastBgreading.staticSlope()));
+                } else {
+                    estimate = BgReading.activePrediction();;
                     String stringEstimate = bgGraphBuilder.unitized_string(estimate);
                     currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow());
                 }

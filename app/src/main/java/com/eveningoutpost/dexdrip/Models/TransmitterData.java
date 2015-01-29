@@ -52,8 +52,8 @@ public class TransmitterData extends Model {
             transmitterData.uuid = UUID.randomUUID().toString();
 
             transmitterData.save();
-            Log.w(TAG, "Created transmitterData record with Raw value of " + transmitterData.raw_data + " at " +transmitterData.timestamp);
-            //Log.w(TAG, "Created transmitterData record with Raw value of " + transmitterData.raw_data + " and Filtered value of " + transmitterData.filtered_data+ " at " +transmitterData.timestamp);
+            //Log.w(TAG, "Created transmitterData record with Raw value of " + transmitterData.raw_data + " at " +transmitterData.timestamp);
+            Log.w(TAG, "Created transmitterData record with Raw value of " + transmitterData.raw_data + " and Filtered value of " + transmitterData.filtered_data+ " at " +transmitterData.timestamp);
             return transmitterData;
         } else {
             //this is NOT a dexbridge packet.  Process accordingly.
