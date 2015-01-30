@@ -34,7 +34,7 @@ Note, the following describes what I am currently using and recommend, it could 
  
  ## For the voltage measurement modification
  * If you have already built the DexDrip and are adding this, follow this first step:
-  * Remove the solder from the VIN and GND pins on the Wixel if possible.  If not possible, then you will have to work carefully.  Keep the wires that are already 
+  * Remove the solder from the VIN and GND pins on the Wixel if possible using a solder sucker or solder wick.  If this is not possible, then you will have to work carefully by keeping the holes heated while inserting the resistors.  Keep in mind, if you do not have a controllable temperature soldering iron, you risk burning the board or the pads and ruining the Wixel.  **I highly recommend getting a solder sucker.**
  * Building the voltage divider
   * Bend the one end of each resistor at a 90 degree angle as close to the resistor as possible 
   * Using helping hands or tape, face the two resistors towards each other and place them side by side so that the leads are touching at the top
