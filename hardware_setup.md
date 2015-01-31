@@ -7,6 +7,7 @@ Note, the following describes what I am currently using and recommend, it could 
 * [A Wixel](http://www.pololu.com/product/1337)
  * I recommend the one without headers(linked) if you want to use wires, if you plan to use a breadboard or make a custom PCB feel free to get the one with headers.
 * [An HM-10 BLE Module](http://www.amazon.com/SunFounder-Bluetooth-Master-Compatible-Arduino/dp/B00N7CA8Y6/ref=sr_1_cc_1?s=aps&ie=UTF8&qid=1416917892&sr=1-1-catcorr&keywords=hm10+sunfounder)
+ * You can get them [straight from sunfounder](http://www.sunfounder.com/index.php?c=show&id=29&model=HM-10) too but they take forever to ship (I have also seen them on ebay)
  * I use the one linked, its great, make sure yours is 3.3v or lower if you wish to power it through the wixel
  * The android app specificly looks for the uuid of the HM10, any other device may require changes to the android app in order to work
  * The HM11 has been used by at least one person and worked out of the box without any code changes, but your mileage may vary.
@@ -22,12 +23,16 @@ Note, the following describes what I am currently using and recommend, it could 
 * Solder and Soldering Iron
  * Or a breadboard if you dont mind the bulk
  * Or a custom made PCB (and one for me too please?)
+<<<<<<< HEAD
  * I needed a fairly hot soldering iron (40w) to remove the pins from the HM10, be careful not to burn the boards though
  * I used a regular not terrifying soldering iron for the rest of it!
 * [Resistors](http://www.radioshack.com)
  * If you wish to measure the Wixel's battery voltage, you'll need to build a voltage divider using two resistors and a piece of wire
  * You'll need a 1/4w 1K Ohm and a 1/4w 2.2K Ohm resistor.  1/8w should work, and be smaller, but it hasn't been tested
  * Optional:  Small heatshrink tubing to protect the resistors (https://www.adafruit.com/product/344)
+=======
+ * I used a cheap 15w soldering iron in order to solder and remove the pins from the HM10 (you can probably go a bit higher but I wouldnt go crazy)
+>>>>>>> upstream/gh-pages
  
  ## Putting it together!
  ![SETUP](http://i.imgur.com/EIGki5R.png)
