@@ -23,17 +23,12 @@ Note, the following describes what I am currently using and recommend, it could 
 * Solder and Soldering Iron
  * Or a breadboard if you dont mind the bulk
  * Or a custom made PCB (and one for me too please?)
-<<<<<<< HEAD
- * I needed a fairly hot soldering iron (40w) to remove the pins from the HM10, be careful not to burn the boards though
+ * I used a cheap 15w soldering iron in order to solder and remove the pins from the HM10 (you can probably go a bit higher but I wouldnt go crazy)
  * I used a regular not terrifying soldering iron for the rest of it!
 * [Resistors](http://www.radioshack.com)
  * If you wish to measure the Wixel's battery voltage, you'll need to build a voltage divider using two resistors and a piece of wire
  * You'll need a 1/4w 1K Ohm and a 1/4w 2.2K Ohm resistor.  1/8w should work, and be smaller, but it hasn't been tested
  * Optional:  Small heatshrink tubing to protect the resistors (https://www.adafruit.com/product/344)
-=======
- * I used a cheap 15w soldering iron in order to solder and remove the pins from the HM10 (you can probably go a bit higher but I wouldnt go crazy)
->>>>>>> upstream/gh-pages
- 
  ## Putting it together!
  ![SETUP](http://i.imgur.com/EIGki5R.png)
  
