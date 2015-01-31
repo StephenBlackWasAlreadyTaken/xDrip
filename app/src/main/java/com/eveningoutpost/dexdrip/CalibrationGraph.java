@@ -6,6 +6,8 @@ import android.support.v4.widget.DrawerLayout;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.eveningoutpost.dexdrip.Models.Calibration;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,31 +47,10 @@ public class CalibrationGraph extends Activity implements NavigationDrawerFragme
         mNavigationDrawerFragment.swapContext(position);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_calibration_graph, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
 
     public void setupCharts() {
         chart = (LineChartView) findViewById(R.id.chart);
-        List<Calibration> calibrations = Calibration.latest(100);
+        List<Calibration> calibrations = Calibration.allForSensor();
         List<PointValue> values = new ArrayList<PointValue>();
         for (Calibration calibration : calibrations) {
             values.add(new PointValue((float)calibration.estimate_raw_at_time_of_calibration, (float)calibration.bg));
@@ -83,9 +64,10 @@ public class CalibrationGraph extends Activity implements NavigationDrawerFragme
 
         Calibration calibration = Calibration.last();
         List<PointValue> lineValues = new ArrayList<PointValue>();
-        lineValues.add(new PointValue((float)start_x, (float)(start_x * calibration.slope + calibration.intercept)));
-        lineValues.add(new PointValue((float)end_x, (float)(end_x * calibration.slope + calibration.intercept)));
-
+        if(calibration != null) {
+            lineValues.add(new PointValue((float) start_x, (float) (start_x * calibration.slope + calibration.intercept)));
+            lineValues.add(new PointValue((float) end_x, (float) (end_x * calibration.slope + calibration.intercept)));
+        }
         Line calibrationLine = new Line(lineValues);
         calibrationLine.setColor(Utils.COLOR_RED);
         calibrationLine.setHasLines(true);
