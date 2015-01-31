@@ -5,12 +5,24 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
 import android.widget.TextView;
 
+import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
+import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.Models.Calibration;
+import com.eveningoutpost.dexdrip.Services.WixelReader;
+import com.eveningoutpost.dexdrip.UtilityModels.BgGraphBuilder;
+import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
+
+import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.List;
 
 import lecho.lib.hellocharts.ViewportChangeListener;
 import lecho.lib.hellocharts.gesture.ZoomType;
@@ -24,6 +36,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     private NavigationDrawerFragment mNavigationDrawerFragment;
     private LineChartView chart;
     private PreviewLineChartView previewChart;
+    SharedPreferences prefs;
     Viewport tempViewport = new Viewport();
     Viewport holdViewport = new Viewport();
     public float left;
@@ -40,14 +53,35 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        startService(new Intent(this, DexCollectionService.class));
+        PreferenceManager.setDefaultValues(this, R.xml.pref_general, false);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_bg_notification, false);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_data_sync, false);
+        PreferenceManager.setDefaultValues(this, R.xml.pref_wifi, false);
+
+
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        checkEula();
         setContentView(R.layout.activity_home);
 
+    }
+
+    public void checkEula() {
+        boolean IUnderstand = prefs.getBoolean("I_understand", false);
+        if (!IUnderstand) {
+            Intent intent = new Intent(getApplicationContext(), LicenseAgreementActivity.class);
+            startActivity(intent);
+            finish();
+        }
     }
 
     @Override
     protected void onResume(){
         super.onResume();
+        checkEula();
+
+        CollectionServiceStarter collectionServiceStarter = new CollectionServiceStarter();
+        collectionServiceStarter.start(getApplicationContext());
+
         _broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context ctx, Intent intent) {
@@ -59,12 +93,13 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         registerReceiver(_broadcastReceiver, new IntentFilter(Intent.ACTION_TIME_TICK));
         mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), menu_name, this);
+        holdViewport.set(0, 0, 0, 0);
         setupCharts();
         updateCurrentBgInfo();
     }
 
     public void setupCharts() {
-        bgGraphBuilder = new BgGraphBuilder();
+        bgGraphBuilder = new BgGraphBuilder(this);
         updateStuff = false;
         chart = (LineChartView) findViewById(R.id.chart);
         chart.setZoomType(ZoomType.HORIZONTAL);
@@ -75,10 +110,12 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         chart.setLineChartData(bgGraphBuilder.lineData());
         previewChart.setLineChartData(bgGraphBuilder.previewLineData());
         updateStuff = true;
-        setViewport();
+
+        previewChart.setViewportCalculationEnabled(true);
+        chart.setViewportCalculationEnabled(true);
         previewChart.setViewportChangeListener(new ViewportListener());
         chart.setViewportChangeListener(new ChartViewPortListener());
-
+        setViewport();
     }
 
     private class ChartViewPortListener implements ViewportChangeListener {
@@ -86,13 +123,8 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         public void onViewportChanged(Viewport newViewport) {
             if (!updatingPreviewViewport) {
                 updatingChartViewport = true;
-//            chart.setZoomEnabled(false);
-//            chart.setZoomLevel(1, 1, 1, true);
                 previewChart.setZoomType(ZoomType.HORIZONTAL);
                 previewChart.setCurrentViewport(newViewport, false);
-                if (updateStuff == true) {
-                    holdViewport.set(newViewport.left, newViewport.top, newViewport.right, newViewport.bottom);
-                }
                 updatingChartViewport = false;
             }
         }
@@ -103,14 +135,13 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         public void onViewportChanged(Viewport newViewport) {
             if (!updatingChartViewport) {
                 updatingPreviewViewport = true;
-//            chart.setZoomEnabled(false);
-//            chart.setZoomLevel(1, 1, 1, true);
                 chart.setZoomType(ZoomType.HORIZONTAL);
                 chart.setCurrentViewport(newViewport, false);
-                if (updateStuff == true) {
-                    holdViewport.set(newViewport.left, newViewport.top, newViewport.right, newViewport.bottom);
-                }
+                tempViewport = newViewport;
                 updatingPreviewViewport = false;
+            }
+            if (updateStuff == true) {
+                holdViewport.set(newViewport.left, newViewport.top, newViewport.right, newViewport.bottom);
             }
         }
 
@@ -122,9 +153,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     }
 
     public void setViewport() {
-        if (tempViewport.left == 0.0) {
-            previewChart.setCurrentViewport(bgGraphBuilder.advanceViewport(chart, previewChart), false);
-        } else if (tempViewport.right >= (new Date().getTime())) {
+        if (tempViewport.left == 0.0 || holdViewport.left == 0.0 || holdViewport.right  >= (new Date().getTime())) {
             previewChart.setCurrentViewport(bgGraphBuilder.advanceViewport(chart, previewChart), false);
         } else {
             previewChart.setCurrentViewport(holdViewport, false);
@@ -142,10 +171,15 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         final TextView currentBgValueText = (TextView) findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
         notificationText.setText("");
-        if(ActiveBluetoothDevice.first() != null) {
+        boolean isBTWixel = CollectionServiceStarter.isBTWixel(getApplicationContext());
+        if((isBTWixel && ActiveBluetoothDevice.first() != null) || (!isBTWixel && WixelReader.IsConfigured(getApplicationContext()))) {
             if (Sensor.isActive() && (Sensor.currentSensor().started_at + (60000 * 60 * 2)) < new Date().getTime()) {
                 if (BgReading.latest(2).size() > 1) {
-                    if (Calibration.latest(2).size() > 1) {
+                    List<Calibration> calibrations = Calibration.latest(2);
+                    if (calibrations.size() > 1) {
+                        if (calibrations.get(0).possible_bad != null && calibrations.get(0).possible_bad == true && calibrations.get(1).possible_bad != null && calibrations.get(1).possible_bad == false) {
+                            notificationText.setText("Possible bad calibration slope, please have a glass of water, wash hands, then recalibrate in a few!");
+                        }
                         displayCurrentInfo();
                     } else {
                         notificationText.setText("Please enter two calibrations to get started!");
@@ -160,45 +194,59 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 notificationText.setText("Now start your sensor");
             }
         } else {
-            notificationText.setText("First pair with your BT device!");
+            if(isBTWixel) {
+                if((android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR2)) {
+                    notificationText.setText("First pair with your BT device");
+                } else {
+                    notificationText.setText("Your device has to be android 4.3 and up to support Bluetooth wixel");
+                }
+            } else {
+                notificationText.setText("First configure your wifi wixel reader ip addresses");
+            }
         }
         mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.navigation_drawer);
         mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), menu_name, this);
     }
 
     public void displayCurrentInfo() {
+        DecimalFormat df = new DecimalFormat("#");
+        df.setMaximumFractionDigits(0);
+
         final TextView currentBgValueText = (TextView)findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
         if ((currentBgValueText.getPaintFlags() & Paint.STRIKE_THRU_TEXT_FLAG) > 0) {
             currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
         }
         BgReading lastBgreading = BgReading.lastNoSenssor();
-
-        if (lastBgreading != null) {
+        boolean predictive = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("predictive_bg", false);
+            if (lastBgreading != null) {
+            double estimate = 0;
             if ((new Date().getTime()) - (60000 * 11) - lastBgreading.timestamp > 0) {
                 notificationText.setText("Signal Missed");
+                if(!predictive){
+                    estimate=lastBgreading.calculated_value;
+                } else {
+                    estimate = BgReading.estimated_bg(lastBgreading.timestamp + (6000 * 7));
+                }
+                currentBgValueText.setText(bgGraphBuilder.unitized_string(estimate));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                if (lastBgreading != null) {
-                    double slope = (float) (BgReading.activeSlope() * 60000);
-                    String arrow;
-                    if (slope <= (-3.5)) {
-                        arrow = "\u21ca";
-                    } else if (slope <= (-2)) {
-                        arrow = "\u2193";
-                    } else if (slope <= (-1)) {
-                        arrow = "\u2198";
-                    } else if (slope <= (1)) {
-                        arrow = "\u2192";
-                    } else if (slope <= (2)) {
-                        arrow = "\u2197";
-                    } else if (slope <= (3.5)) {
-                        arrow = "\u2191";
-                    } else {
-                        arrow = "\u21c8";
-                    }
-                    currentBgValueText.setText("" + BgReading.activePrediction() + " " + arrow);
+                if(!predictive){
+                    estimate=lastBgreading.calculated_value;
+                    String stringEstimate = bgGraphBuilder.unitized_string(estimate);
+                    currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow(lastBgreading.staticSlope()));
+                } else {
+                    estimate = BgReading.activePrediction();
+                    String stringEstimate = bgGraphBuilder.unitized_string(estimate);
+                    currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow());
                 }
+            }
+            if(bgGraphBuilder.unitized(estimate) <= bgGraphBuilder.lowMark) {
+                currentBgValueText.setTextColor(Color.parseColor("#C30909"));
+            } else if(bgGraphBuilder.unitized(estimate) >= bgGraphBuilder.highMark) {
+                currentBgValueText.setTextColor(Color.parseColor("#FFBB33"));
+            } else {
+                currentBgValueText.setTextColor(Color.WHITE);
             }
         }
     setupCharts();
