@@ -141,6 +141,12 @@
                 android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/device_filter" />
         </activity>
+        
+        <receiver android:name="com.eveningoutpost.dexdrip.UtilityModels.NotificationsReceiver" >
+            <intent-filter>
+                <action android:name="com.eveningoutpost.dexdrip.UtilityModels.Notifications" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
