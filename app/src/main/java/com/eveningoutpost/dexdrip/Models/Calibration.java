@@ -222,7 +222,6 @@ public class Calibration extends Model {
             calibration.save();
 
             calculate_w_l_s();
-            //adjustRecentBgReadings();
             CalibrationSendQueue.addToQueue(calibration, context);
         }
         CalibrationRequest.createOffset(lowerCalibration.bg, 35);
@@ -235,7 +234,7 @@ public class Calibration extends Model {
         Sensor sensor = Sensor.currentSensor();
         CalRecord firstCalRecord = calRecords[0];
         CalRecord secondCalRecord = calRecords[0];
-        //        CalRecord secondCalRecord = calRecords[calRecords.length - 1];
+//        CalRecord secondCalRecord = calRecords[calRecords.length - 1];
         //TODO: Figgure out how the ratio between the two is determined
         double calSlope = ((secondCalRecord.getScale() / secondCalRecord.getSlope()) + (3 * firstCalRecord.getScale() / firstCalRecord.getSlope())) * 250;
         double calIntercept = (((secondCalRecord.getScale() * secondCalRecord.getIntercept()) / secondCalRecord.getSlope()) + ((3 * firstCalRecord.getScale() * firstCalRecord.getIntercept()) / firstCalRecord.getSlope())) / -4;
@@ -252,11 +251,10 @@ public class Calibration extends Model {
         Log.d("CAL CHECK IN ", "calSlope "+calSlope);
         Log.d("CAL CHECK IN ", "calIntercept "+calIntercept);
 
-
         if (sensor != null) {
             for(int i = 0; i < firstCalRecord.getCalSubrecords().length - 1; i++) {
                 if (((firstCalRecord.getCalSubrecords()[i] != null && Calibration.is_new(firstCalRecord.getCalSubrecords()[i]))) || (i == 0 && override)) {
-                        CalSubrecord calSubrecord = firstCalRecord.getCalSubrecords()[i];
+                    CalSubrecord calSubrecord = firstCalRecord.getCalSubrecords()[i];
 
                     Calibration calibration = new Calibration();
                     calibration.bg = calSubrecord.getCalBGL();
@@ -267,7 +265,7 @@ public class Calibration extends Model {
 
                     calibration.sensor_confidence = ((-0.0018 * calibration.bg * calibration.bg) + (0.6657 * calibration.bg) + 36.7505) / 100;
                     if (calibration.sensor_confidence <= 0) {
-                            calibration.sensor_confidence = 0;
+                        calibration.sensor_confidence = 0;
                     }
                     calibration.slope_confidence = 0.8; //TODO: query backwards to find this value near the timestamp
                     calibration.estimate_raw_at_time_of_calibration = calSubrecord.getCalRaw() / 1000;
@@ -294,7 +292,7 @@ public class Calibration extends Model {
             }
             if(firstCalRecord.getCalSubrecords()[0] != null && firstCalRecord.getCalSubrecords()[2] == null) {
                 if(Calibration.latest(2).size() == 1) {
-                   Calibration.create(calRecords, context, true);
+                    Calibration.create(calRecords, context, true);
                 }
             }
             Notifications.notificationSetter(context);
@@ -318,6 +316,7 @@ public class Calibration extends Model {
             return false;
         }
     }
+
     public static Calibration create(double bg, Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         String unit = prefs.getString("units", "mgdl");
@@ -376,13 +375,13 @@ public class Calibration extends Model {
         Sensor sensor = Sensor.currentSensor();
         if (sensor == null) { return null; }
         return new Select()
-            .from(Calibration.class)
-            .where("Sensor = ? ", sensor.getId())
-            .where("slope_confidence != 0")
-            .where("sensor_confidence != 0")
-            .where("timestamp > ?", (new Date().getTime() - (60000 * 60 * 24 * 5)))
-            .orderBy("timestamp desc")
-            .execute();
+                .from(Calibration.class)
+                .where("Sensor = ? ", sensor.getId())
+                .where("slope_confidence != 0")
+                .where("sensor_confidence != 0")
+                .where("timestamp > ?", (new Date().getTime() - (60000 * 60 * 24 * 5)))
+                .orderBy("timestamp desc")
+                .execute();
     }
 
     public static void calculate_w_l_s() {
@@ -509,7 +508,6 @@ public class Calibration extends Model {
         estimate_raw_at_time_of_calibration = rawValue;
         save();
         calculate_w_l_s();
-        //adjustRecentBgReadings();
         CalibrationSendQueue.addToQueue(this, context);
     }
 
@@ -551,7 +549,7 @@ public class Calibration extends Model {
         return new Select()
                 .from(Calibration.class)
                 .where("Sensor = ? ", sensor.getId())
-                .orderBy("_ID desc")
+                .orderBy("timestamp desc")
                 .executeSingle();
     }
 
@@ -573,7 +571,7 @@ public class Calibration extends Model {
                 .where("slope_confidence != 0")
                 .where("sensor_confidence != 0")
                 .where("timestamp > ?", (new Date().getTime() - (60000 * 60 * 24 * 4)))
-                .orderBy("bg asc")
+                .orderBy("bg desc")
                 .executeSingle();
         return calibration.bg;
     }
@@ -586,7 +584,7 @@ public class Calibration extends Model {
                 .where("slope_confidence != 0")
                 .where("sensor_confidence != 0")
                 .where("timestamp > ?", (new Date().getTime() - (60000 * 60 * 24 * 4)))
-                .orderBy("bg desc")
+                .orderBy("bg asc")
                 .executeSingle();
         return calibration.bg;
     }

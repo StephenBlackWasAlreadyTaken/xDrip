@@ -141,15 +141,14 @@ public class BgReading extends Model {
         }
     }
 
-    public double staticSlope() {
-        double slope = (2 * this.a * this.timestamp) + this.b;
-        Log.w(TAG, "ESTIMATE SLOPE" + slope);
-        return slope;
-    }
-
     public static double activeSlope() {
         BgReading bgReading = BgReading.lastNoSenssor();
         double slope = (2 * bgReading.a * (new Date().getTime() + BESTOFFSET)) + bgReading.b;
+        Log.w(TAG, "ESTIMATE SLOPE" + slope);
+        return slope;
+    }
+    public double staticSlope() {
+        double slope = (2 * this.a * this.timestamp) + this.b;
         Log.w(TAG, "ESTIMATE SLOPE" + slope);
         return slope;
     }
@@ -188,7 +187,7 @@ public class BgReading extends Model {
 
                 //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
                 double adjust_for = (86400000 * 1.8) - bgReading.time_since_sensor_started;
-                if (adjust_for > 0 && predictBG) {
+                if (adjust_for > 0) {
                     bgReading.age_adjusted_raw_value = ((50 / 20) * (adjust_for / (86400000 * 1.8))) * (raw_data / 1000);
                     Log.w(TAG,"create RAW VALUE ADJUSTMENT: FROM:" + raw_data + " TO: " + bgReading.age_adjusted_raw_value);
                 } else {
@@ -224,7 +223,7 @@ public class BgReading extends Model {
 
                 //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
                 double adjust_for = (86400000 * 1.9) - bgReading.time_since_sensor_started;
-                if (adjust_for > 0 && predictBG) {
+                if (adjust_for > 0) {
                     bgReading.age_adjusted_raw_value = (((.45) * (adjust_for / (86400000 * 1.9))) * (selected_value/1000)) + (selected_value/1000);
                     Log.w(TAG,"create RAW VALUE ADJUSTMENT: FROM:" + (selected_value/1000) + " TO: " + bgReading.age_adjusted_raw_value);
                 } else {
@@ -254,8 +253,6 @@ public class BgReading extends Model {
         return bgReading;
     }
     public static BgReading create(double raw_data, Context context) {
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean predictBG = prefs.getBoolean("predictBG", false);
         BgReading bgReading = new BgReading();
         Sensor sensor = Sensor.currentSensor();
         if (sensor != null) {
@@ -272,9 +269,9 @@ public class BgReading extends Model {
 
                 //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
                 double adjust_for = (86400000 * 1.8) - bgReading.time_since_sensor_started;
-                if (adjust_for > 0 && predictBG) {
+                if (adjust_for > 0) {
                     bgReading.age_adjusted_raw_value = ((50 / 20) * (adjust_for / (86400000 * 1.8))) * (raw_data / 1000);
-                    Log.w(TAG,"create RAW VALUE ADJUSTMENT: FROM:" + raw_data + " TO: " + bgReading.age_adjusted_raw_value);
+                    Log.w("RAW VALUE ADJUSTMENT: ", "FROM:" + raw_data + " TO: " + bgReading.age_adjusted_raw_value);
                 } else {
                     bgReading.age_adjusted_raw_value = (raw_data / 1000);
                 }
@@ -295,9 +292,9 @@ public class BgReading extends Model {
 
                 //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
                 double adjust_for = (86400000 * 1.9) - bgReading.time_since_sensor_started;
-                if (adjust_for > 0 && predictBG) {
+                if (adjust_for > 0) {
                     bgReading.age_adjusted_raw_value = (((.45) * (adjust_for / (86400000 * 1.9))) * (raw_data/1000)) + (raw_data/1000);
-                    Log.w(TAG,"create RAW VALUE ADJUSTMENT: FROM:" + (raw_data/1000) + " TO: " + bgReading.age_adjusted_raw_value);
+                    Log.w("RAW VALUE ADJUSTMENT: ", "FROM:" + (raw_data/1000) + " TO: " + bgReading.age_adjusted_raw_value);
                 } else {
                     bgReading.age_adjusted_raw_value = (raw_data/1000);
                 }
@@ -308,24 +305,25 @@ public class BgReading extends Model {
                         lastBgReading.calibration.rawValueOverride(BgReading.weightedAverageRaw(lastBgReading.timestamp, bgReading.timestamp, lastBgReading.calibration.timestamp, lastBgReading.age_adjusted_raw_value, bgReading.age_adjusted_raw_value), context);
                     }
                 }
+
                 if(calibration.check_in) {
                     double firstAdjSlope = calibration.first_slope + (calibration.first_decay * (Math.ceil(new Date().getTime() - calibration.timestamp)/(1000 * 60 * 10)));
-                    //double secondAdjSlope = calibration.first_slope + (calibration.first_decay * ((new Date().getTime() - calibration.timestamp)/(1000 * 60 * 10)));
+//                    double secondAdjSlope = calibration.first_slope + (calibration.first_decay * ((new Date().getTime() - calibration.timestamp)/(1000 * 60 * 10)));
                     double calSlope = (calibration.first_scale / firstAdjSlope)*1000;
                     double calIntercept = ((calibration.first_scale * calibration.first_intercept) / firstAdjSlope)*-1;
-                    //double calSlope = ((calibration.second_scale / secondAdjSlope) + (3 * calibration.first_scale / firstAdjSlope)) * 250;
-                    //double calIntercept = (((calibration.second_scale * calibration.second_intercept) / secondAdjSlope) + ((3 * calibration.first_scale * calibration.first_intercept) / firstAdjSlope)) / -4;
-                    bgReading.calculated_value = (((calSlope * bgReading.raw_data) + calIntercept) - 5);
+//                    double calSlope = ((calibration.second_scale / secondAdjSlope) + (3 * calibration.first_scale / firstAdjSlope)) * 250;
+//                    double calIntercept = (((calibration.second_scale * calibration.second_intercept) / secondAdjSlope) + ((3 * calibration.first_scale * calibration.first_intercept) / firstAdjSlope)) / -4;
 
+                    bgReading.calculated_value = (((calSlope * bgReading.raw_data) + calIntercept) - 5);
                 } else {
                     bgReading.calculated_value = ((calibration.slope * bgReading.age_adjusted_raw_value) + calibration.intercept);
-                    }
+                }
                 if (bgReading.calculated_value <= 40) {
                     bgReading.calculated_value = 40;
                 } else if (bgReading.calculated_value >= 400) {
                     bgReading.calculated_value = 400;
                 }
-                Log.w(TAG, "create NEW VALUE CALCULATED AT: " + bgReading.calculated_value);
+                Log.w(TAG, "NEW VALUE CALCULATED AT: " + bgReading.calculated_value);
 
                 bgReading.save();
                 bgReading.perform_calculations();
@@ -333,7 +331,7 @@ public class BgReading extends Model {
                 BgSendQueue.addToQueue(bgReading, "create", context);
             }
         }
-        Log.w(TAG,"create BG GSON: " + bgReading.toS());
+        Log.w("BG GSON: ",bgReading.toS());
 
         return bgReading;
     }
@@ -408,7 +406,7 @@ public class BgReading extends Model {
                 .orderBy("_ID desc")
                 .executeSingle();
     }
-    
+
     public static List<BgReading> latest(int number) {
         Sensor sensor = Sensor.currentSensor();
         if (sensor == null) { return null; }
@@ -456,25 +454,17 @@ public class BgReading extends Model {
         double estimate;
         BgReading latest = BgReading.last();
         if (latest == null) {
-            Log.w(TAG, "estimated_raw_bg: No data yet, assume perfect!");
+            Log.w(TAG, "No data yet, assume perfect!");
             estimate = 160;
         } else {
             estimate = (latest.ra * timestamp * timestamp) + (latest.rb * timestamp) + latest.rc;
         }
-        Log.w(TAG, "estimated_raw_bg returning " + estimate);
+        Log.w(TAG, "ESTIMATE RAW BG" + estimate);
         return estimate;
     }
 
     //*******INSTANCE METHODS***********//
     public void perform_calculations() {
-        Calibration calibration = Calibration.last();
-        if (calibration == null) {
-            Log.w(TAG, "perform_calculations NO CALIBRATION DATA, CANNOT CALCULATE CURRENT VALUES.");
-        } else {
-            calculated_value = ((calibration.slope * age_adjusted_raw_value) + calibration.intercept);
-            Log.w(TAG, "perform_calculations NEW VALUE CALCULATED AT: " + calculated_value);
-        }
-        save();
         find_new_curve();
         find_new_raw_curve();
         find_slope();
@@ -498,7 +488,7 @@ public class BgReading extends Model {
             calculated_value_slope = 0;
             save();
         } else {
-            Log.w(TAG, "find_slope NO BG? COULDNT FIND SLOPE!");
+            Log.w(TAG, "NO BG? COULDNT FIND SLOPE!");
         }
     }
 
@@ -519,12 +509,12 @@ public class BgReading extends Model {
             b = (-y1*(x2+x3)/((x1-x2)*(x1-x3))-y2*(x1+x3)/((x2-x1)*(x2-x3))-y3*(x1+x2)/((x3-x1)*(x3-x2)));
             c = (y1*x2*x3/((x1-x2)*(x1-x3))+y2*x1*x3/((x2-x1)*(x2-x3))+y3*x1*x2/((x3-x1)*(x3-x2)));
 
-            Log.w(TAG, "find_new_curve BG PARABOLIC RATES: "+a+"x^2 + "+b+"x + "+c);
+            Log.w(TAG, "BG PARABOLIC RATES: "+a+"x^2 + "+b+"x + "+c);
 
             save();
         } else if (last_3.size() == 2) {
 
-            Log.w(TAG, "find_new_curve Not enough data to calculate parabolic rates - assume Linear");
+            Log.w(TAG, "Not enough data to calculate parabolic rates - assume Linear");
                 BgReading latest = last_3.get(0);
                 BgReading second_latest = last_3.get(1);
 
@@ -541,15 +531,15 @@ public class BgReading extends Model {
                 a = 0;
                 c = -1 * ((latest.b * x1) - y1);
 
-            Log.w(TAG, "find_new_curve "+latest.a+"x^2 + "+latest.b+"x + "+latest.c);
+            Log.w(TAG, ""+latest.a+"x^2 + "+latest.b+"x + "+latest.c);
                 save();
             } else {
-            Log.w(TAG, "find_new_curve Not enough data to calculate parabolic rates - assume static data");
+            Log.w(TAG, "Not enough data to calculate parabolic rates - assume static data");
             a = 0;
             b = 0;
             c = calculated_value;
 
-            Log.w(TAG, "find_new_curve "+a+"x^2 + "+b+"x + "+c);
+            Log.w(TAG, ""+a+"x^2 + "+b+"x + "+c);
             save();
         }
     }
@@ -571,7 +561,7 @@ public class BgReading extends Model {
             rb = (-y1*(x2+x3)/((x1-x2)*(x1-x3))-y2*(x1+x3)/((x2-x1)*(x2-x3))-y3*(x1+x2)/((x3-x1)*(x3-x2)));
             rc = (y1*x2*x3/((x1-x2)*(x1-x3))+y2*x1*x3/((x2-x1)*(x2-x3))+y3*x1*x2/((x3-x1)*(x3-x2)));
 
-            Log.w(TAG, "find_new_raw_curve RAW PARABOLIC RATES: "+ra+"x^2 + "+rb+"x + "+rc);
+            Log.w(TAG, "RAW PARABOLIC RATES: "+ra+"x^2 + "+rb+"x + "+rc);
             save();
         } else if (last_3.size() == 2) {
             BgReading latest = last_3.get(0);
@@ -589,12 +579,12 @@ public class BgReading extends Model {
             ra = 0;
             rc = -1 * ((latest.rb * x1) - y1);
 
-            Log.w(TAG, "find_new_raw_curve Not enough data to calculate parabolic rates - assume Linear data");
+            Log.w(TAG, "Not enough data to calculate parabolic rates - assume Linear data");
 
-            Log.w(TAG, "find_new_raw_curve RAW PARABOLIC RATES: "+ra+"x^2 + "+rb+"x + "+rc);
+            Log.w(TAG, "RAW PARABOLIC RATES: "+ra+"x^2 + "+rb+"x + "+rc);
             save();
         } else {
-            Log.w(TAG, "find_new_raw_curve Not enough data to calculate parabolic rates - assume static data");
+            Log.w(TAG, "Not enough data to calculate parabolic rates - assume static data");
             BgReading latest_entry = BgReading.lastNoSenssor();
             ra = 0;
             rb = 0;
@@ -617,5 +607,4 @@ public class BgReading extends Model {
                 .create();
         return gson.toJson(this);
     }
-
 }

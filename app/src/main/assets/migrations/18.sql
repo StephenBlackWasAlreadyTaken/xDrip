@@ -1,3 +1,4 @@
-ALTER TABLE TransmitterData ADD COLUMN filtered_data DOUBLE;
-ALTER TABLE BgReadings ADD COLUMN filtered_data DOUBLE;
-ALTER TABLE BgReadings ADD COLUMN selected_filtered_data BOOLEAN;
+ALTER TABLE Calibration ADD COLUMN first_decay REAL;
+ALTER TABLE Calibration ADD COLUMN second_decay REAL;
+ALTER TABLE Calibration ADD COLUMN first_slope REAL;
+ALTER TABLE Calibration ADD COLUMN second_slope REAL;
