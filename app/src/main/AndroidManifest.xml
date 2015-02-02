@@ -18,7 +18,6 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.BATTERY_STATS" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
-    <uses-permission android:name="android.permission." />
 
     <application
         android:name="com.activeandroid.app.Application"
@@ -32,7 +31,7 @@
             android:value="DexDrip.db" />
         <meta-data
             android:name="AA_DB_VERSION"
-            android:value="20" />
+            android:value="21" />
 
         <!-- <provider android:authorities="com.example" android:exported="false" android:name="com.activeandroid.content.ContentProvider" /> -->
 

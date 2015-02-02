@@ -1,6 +1,7 @@
 package com.eveningoutpost.dexdrip.Models;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.provider.BaseColumns;
@@ -14,6 +15,7 @@ import com.eveningoutpost.dexdrip.Sensor;
 import com.eveningoutpost.dexdrip.UtilityModels.BgSendQueue;
 import com.eveningoutpost.dexdrip.UtilityModels.Constants;
 import com.eveningoutpost.dexdrip.UtilityModels.Notifications;
+import com.eveningoutpost.dexdrip.Home;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.Expose;
@@ -47,6 +49,14 @@ public class BgReading extends Model {
     @Expose
     @Column(name = "raw_data")
     public double raw_data;
+
+    @Expose
+    @Column(name = "filtered_data")
+    public double filtered_data;
+
+    @Expose
+    @Column(name = "selected_filtered_data")
+    public boolean selected_filtered_data;
 
     @Expose
     @Column(name = "age_adjusted_raw_value")
@@ -155,6 +165,93 @@ public class BgReading extends Model {
     }
 
     //*******CLASS METHODS***********//
+    //This one handles the filtered_data that we get with Dexbridge.
+    public static BgReading create(double raw_data, double filtered_data, Context context) {
+        double selected_value = 0;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        boolean predictBG = prefs.getBoolean("predictBG", false);
+        BgReading bgReading = new BgReading();
+        Sensor sensor = Sensor.currentSensor();
+        if (sensor != null) {
+            Calibration calibration = Calibration.last();
+            if (calibration == null) {
+                bgReading.sensor = sensor;
+                bgReading.sensor_uuid = sensor.uuid;
+                bgReading.raw_data = (raw_data / 1000);
+                bgReading.filtered_data = (filtered_data / 1000);
+                bgReading.timestamp = new Date().getTime();
+                bgReading.uuid = UUID.randomUUID().toString();
+                bgReading.time_since_sensor_started = bgReading.timestamp - sensor.started_at;
+                bgReading.synced = false;
+                bgReading.calibration_flag = false;
+
+                //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
+                double adjust_for = (86400000 * 1.8) - bgReading.time_since_sensor_started;
+                if (adjust_for > 0) {
+                    bgReading.age_adjusted_raw_value = ((50 / 20) * (adjust_for / (86400000 * 1.8))) * (raw_data / 1000);
+                    Log.w(TAG,"create RAW VALUE ADJUSTMENT: FROM:" + raw_data + " TO: " + bgReading.age_adjusted_raw_value);
+                } else {
+                    bgReading.age_adjusted_raw_value = (raw_data / 1000);
+                }
+
+                bgReading.save();
+                bgReading.perform_calculations();
+            } else {
+
+                bgReading.sensor = sensor;
+                bgReading.sensor_uuid = sensor.uuid;
+                bgReading.calibration = calibration;
+                bgReading.calibration_uuid = calibration.uuid;
+                bgReading.raw_data = (raw_data/1000);
+                bgReading.filtered_data = (filtered_data/1000);
+                bgReading.timestamp = new Date().getTime();
+                bgReading.uuid = UUID.randomUUID().toString();
+                bgReading.time_since_sensor_started = bgReading.timestamp - sensor.started_at;
+                bgReading.synced = false;
+
+                BgReading lastBgReading = BgReading.last();
+
+                if(Math.abs((bgReading.raw_data - calibration.intercept)-(lastBgReading.raw_data - calibration.intercept)) > (lastBgReading.calculated_value * 0.10)){
+                    Log.w(TAG,"create: Using Filtered Data");
+                    bgReading.selected_filtered_data = true;
+                    selected_value = filtered_data;
+                } else {
+                    Log.w(TAG, "create: Using Raw Data");
+                    bgReading.selected_filtered_data = false;
+                    selected_value = raw_data;
+                }
+
+                //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
+                double adjust_for = (86400000 * 1.9) - bgReading.time_since_sensor_started;
+                if (adjust_for > 0) {
+                    bgReading.age_adjusted_raw_value = (((.45) * (adjust_for / (86400000 * 1.9))) * (selected_value/1000)) + (selected_value/1000);
+                    Log.w(TAG,"create RAW VALUE ADJUSTMENT: FROM:" + (selected_value/1000) + " TO: " + bgReading.age_adjusted_raw_value);
+                } else {
+                    bgReading.age_adjusted_raw_value = (selected_value/1000);
+                }
+
+                if (lastBgReading != null && lastBgReading.calibration != null) {
+                    if (lastBgReading.calibration_flag == true && ((lastBgReading.timestamp + (60000 * 20)) > bgReading.timestamp) && ((lastBgReading.calibration.timestamp + (60000 * 20)) > bgReading.timestamp)) {
+                        lastBgReading.calibration.rawValueOverride(BgReading.weightedAverageRaw(lastBgReading.timestamp, bgReading.timestamp, lastBgReading.calibration.timestamp, lastBgReading.age_adjusted_raw_value, bgReading.age_adjusted_raw_value), context);
+                    }
+                }
+                bgReading.calculated_value = ((calibration.slope * bgReading.age_adjusted_raw_value) + calibration.intercept);
+                if (bgReading.calculated_value <= 40) {
+                    bgReading.calculated_value = 40;
+                } else if (bgReading.calculated_value >= 400) {
+                    bgReading.calculated_value = 400;
+                }
+                Log.w(TAG, "create NEW VALUE CALCULATED AT: " + bgReading.calculated_value);
+
+                bgReading.save();
+                bgReading.perform_calculations();
+                Notifications.notificationSetter(context);
+                BgSendQueue.addToQueue(bgReading, "create", context);
+            }
+        }
+        Log.w(TAG,"create BG GSON: " + bgReading.toS());
+        return bgReading;
+    }
     public static BgReading create(double raw_data, Context context) {
         BgReading bgReading = new BgReading();
         Sensor sensor = Sensor.currentSensor();

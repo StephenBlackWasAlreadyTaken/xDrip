@@ -53,10 +53,10 @@ public class Calibration extends Model {
     @Expose
     @Column(name = "raw_value")
     public double raw_value;
-//
-//    @Expose
-//    @Column(name = "filtered_value")
-//    public double filtered_value;
+
+    @Expose
+    @Column(name = "filtered_value")
+    public double filtered_value;
 
     @Expose
     @Column(name = "adjusted_raw_value")
@@ -141,7 +141,6 @@ public class Calibration extends Model {
     @Expose
     @Column(name = "second_scale")
     public double second_scale;
-
 
     public static void initialCalibration(double bg1, double bg2, Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
