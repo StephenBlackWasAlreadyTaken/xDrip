@@ -246,7 +246,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 currentBgValueText.setText(bgGraphBuilder.unitized_string(estimate));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                currentDexDripBattText.setText("DexDrip Batt: "+ Integer.toString(Math.round((lastBgreading.wixel_battery_level - minimumBatterySetting)/(maximumBatterySetting - minimumBatterySetting)*100)) + "%");
+                currentDexDripBattText.setText("DexDrip Battery: "+ Integer.toString(Math.round((lastBgreading.wixel_battery_level - minimumBatterySetting)/(maximumBatterySetting - minimumBatterySetting)*100)) + "%");
                     if(!predictive){
                     estimate=lastBgreading.calculated_value;
                     String stringEstimate = bgGraphBuilder.unitized_string(estimate);
