@@ -33,6 +33,9 @@ public class TransmitterData extends Model {
 
     @Column(name = "uuid", index = true)
     public String uuid;
+    
+    @Column(name = "wixel_battery_level")
+    public float wixel_battery_level;
 
     public static TransmitterData create(byte[] buffer, int len) {
                 StringBuilder data_string = new StringBuilder();
@@ -55,6 +58,7 @@ public class TransmitterData extends Model {
         }
         if (Integer.parseInt(data[0]) < 1000) { return null; } // Sometimes the HM10 sends the battery level and readings in separate transmissions, filter out these incomplete packets!
         transmitterData.raw_data = Integer.parseInt(data[0]);
+        transmitterData.wixel_battery_level = Float.parseFloat(data[2]);
         transmitterData.timestamp = new Date().getTime();
         transmitterData.uuid = UUID.randomUUID().toString();
 
@@ -62,7 +66,7 @@ public class TransmitterData extends Model {
         return transmitterData;
     }
 
-    public static TransmitterData create(int raw_data ,int sensor_battery_level, long timestamp) {
+    public static TransmitterData create(int raw_data ,int sensor_battery_level, long timestamp, float wixel_battery_level) {
         randomDelay(100, 2000);
         TransmitterData lastTransmitterData = TransmitterData.last();
         if (lastTransmitterData != null && lastTransmitterData.raw_data == raw_data && Math.abs(lastTransmitterData.timestamp - new Date().getTime()) < (10000)) { //Stop allowing duplicate data, its bad!
@@ -73,6 +77,7 @@ public class TransmitterData extends Model {
         transmitterData.sensor_battery_level = sensor_battery_level;
         transmitterData.raw_data = raw_data ;
         transmitterData.timestamp = timestamp;
+        transmitterData.wixel_battery_level = wixel_battery_level;
         transmitterData.uuid = UUID.randomUUID().toString();
         transmitterData.save();
         return transmitterData;
@@ -91,7 +96,7 @@ public class TransmitterData extends Model {
             Log.d("Sleeping ", "for " + random + "ms");
             Thread.sleep(random);
         } catch (InterruptedException e) {
-            Log.e("Random Delay ", "INTERUPTED");
+            Log.e("Random Delay ", "INTERRUPTED");
         }
     }
 }

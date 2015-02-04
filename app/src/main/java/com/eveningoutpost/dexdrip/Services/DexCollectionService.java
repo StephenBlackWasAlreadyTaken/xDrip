@@ -356,6 +356,7 @@ public class DexCollectionService extends Service {
             Sensor sensor = Sensor.currentSensor();
             if (sensor != null) {
                 sensor.latest_battery_level = transmitterData.sensor_battery_level;
+                sensor.wixel_battery_level = transmitterData.wixel_battery_level;
                 sensor.save();
 
                 BgReading bgReading = BgReading.create(transmitterData.raw_data, this);

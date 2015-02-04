@@ -9,8 +9,10 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
+import android.view.View;
 import android.widget.TextView;
 
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
@@ -23,6 +25,7 @@ import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
+import java.lang.Math;
 
 import lecho.lib.hellocharts.ViewportChangeListener;
 import lecho.lib.hellocharts.gesture.ZoomType;
@@ -211,11 +214,23 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     public void displayCurrentInfo() {
         DecimalFormat df = new DecimalFormat("#");
         df.setMaximumFractionDigits(0);
+        float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("min_batt","2063"));
+        float maximumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("max_batt","2716"));
 
         final TextView currentBgValueText = (TextView)findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
+        final TextView currentDexDripBattText = (TextView)findViewById(R.id.currentDexDripBatt);
+        
+        if (PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("display_dd_batt", false) == false) {
+            currentDexDripBattText.setVisibility(View.INVISIBLE);
+        } else {
+            currentDexDripBattText.setVisibility(View.VISIBLE);
+        }
+            
+        
         if ((currentBgValueText.getPaintFlags() & Paint.STRIKE_THRU_TEXT_FLAG) > 0) {
             currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            currentDexDripBattText.setPaintFlags((currentDexDripBattText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG)));
         }
         BgReading lastBgreading = BgReading.lastNoSenssor();
         boolean predictive = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("predictive_bg", false);
@@ -231,7 +246,8 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 currentBgValueText.setText(bgGraphBuilder.unitized_string(estimate));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                if(!predictive){
+                currentDexDripBattText.setText("DexDrip Batt: "+ Integer.toString(Math.round((lastBgreading.wixel_battery_level - minimumBatterySetting)/(maximumBatterySetting - minimumBatterySetting)*100)) + "%");
+                    if(!predictive){
                     estimate=lastBgreading.calculated_value;
                     String stringEstimate = bgGraphBuilder.unitized_string(estimate);
                     currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow(lastBgreading.staticSlope()));

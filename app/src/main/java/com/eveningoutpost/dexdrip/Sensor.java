@@ -34,6 +34,9 @@ public class Sensor extends Model {
     @Column(name = "uuid", index = true)
     public String uuid;
 
+    @Column(name = "wixel_battery_level")
+    public float wixel_battery_level;
+    
     public static Sensor create(double started_at) {
         Sensor sensor = new Sensor();
         sensor.started_at = started_at;

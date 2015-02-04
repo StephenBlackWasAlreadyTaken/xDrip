@@ -331,7 +331,7 @@ public class WixelReader  extends Thread {
 	        		if (LastReading.CaptureDateTime > LastReportedReading + 5000) {
 	        			// We have a real new reading...
 	        			Log.e(TAG, "calling setSerialDataToTransmitterRawData " + LastReading.RawValue);
-	        			setSerialDataToTransmitterRawData(LastReading.RawValue , LastReading.BatteryLife, LastReading.CaptureDateTime);
+	        			setSerialDataToTransmitterRawData(LastReading.RawValue , LastReading.BatteryLife, LastReading.CaptureDateTime, LastReading.getUploaderBatteryLife());
 	        			LastReportedReading = LastReading.CaptureDateTime;
 	        		}
 	        	}
@@ -369,7 +369,7 @@ public class WixelReader  extends Thread {
 
                 int fakedRaw = 150000 + i * 1000;
                 Log.e(TAG, "calling setSerialDataToTransmitterRawData " + fakedRaw);
-                setSerialDataToTransmitterRawData(fakedRaw, 100, new Date().getTime());
+                setSerialDataToTransmitterRawData(fakedRaw, 100, new Date().getTime(), 3300);
 
                } catch (InterruptedException e) {
                    // time to get out...
@@ -383,14 +383,15 @@ public class WixelReader  extends Thread {
         mStop = true;
         interrupt();
     }
-    public void setSerialDataToTransmitterRawData(int raw_data ,int sensor_battery_leve, Long CaptureTime) {
+    public void setSerialDataToTransmitterRawData(int raw_data ,int sensor_battery_leve, Long CaptureTime, float wixel_battery_level) {
 
-        TransmitterData transmitterData = TransmitterData.create(raw_data, sensor_battery_leve, CaptureTime);
+        TransmitterData transmitterData = TransmitterData.create(raw_data, sensor_battery_leve, CaptureTime, wixel_battery_level);
         if (transmitterData != null) {
             Sensor sensor = Sensor.currentSensor();
             if (sensor != null) {
                 BgReading bgReading = BgReading.create(transmitterData.raw_data, mContext);
                 sensor.latest_battery_level = transmitterData.sensor_battery_level;
+                sensor.wixel_battery_level = transmitterData.wixel_battery_level;
                 sensor.save();
             } else {
                 Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
