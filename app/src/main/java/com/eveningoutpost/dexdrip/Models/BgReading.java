@@ -158,7 +158,7 @@ public class BgReading extends Model {
     }
 
     //*******CLASS METHODS***********//
-    public static BgReading create(double raw_data, Context context) {
+    public static BgReading create(double raw_data, float wixel_battery_level, Context context) {
         BgReading bgReading = new BgReading();
         Sensor sensor = Sensor.currentSensor();
         if (sensor != null) {
@@ -172,7 +172,7 @@ public class BgReading extends Model {
                 bgReading.time_since_sensor_started = bgReading.timestamp - sensor.started_at;
                 bgReading.synced = false;
                 bgReading.calibration_flag = false;
-                bgReading.wixel_battery_level = sensor.wixel_battery_level;
+                bgReading.wixel_battery_level = wixel_battery_level;
 
                 //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
                 double adjust_for = (86400000 * 1.8) - bgReading.time_since_sensor_started;
@@ -196,7 +196,7 @@ public class BgReading extends Model {
                 bgReading.uuid = UUID.randomUUID().toString();
                 bgReading.time_since_sensor_started = bgReading.timestamp - sensor.started_at;
                 bgReading.synced = false;
-                bgReading.wixel_battery_level = sensor.wixel_battery_level;
+                bgReading.wixel_battery_level = wixel_battery_level;
 
                 //TODO: THIS IS A BIG SILLY IDEA, THIS WILL HAVE TO CHANGE ONCE WE GET SOME REAL DATA FROM THE START OF SENSOR LIFE
                 double adjust_for = (86400000 * 1.9) - bgReading.time_since_sensor_started;

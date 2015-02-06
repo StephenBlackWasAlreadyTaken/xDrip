@@ -37,7 +37,7 @@ public class FakeNumbers extends Activity {
                 EditText value = (EditText) findViewById(R.id.bg_value);
                 int intValue = Integer.parseInt(value.getText().toString());
 
-                BgReading bgReading = BgReading.create(intValue * 1000, getApplicationContext());
+                BgReading bgReading = BgReading.create(intValue * 1000, 2200, getApplicationContext());
                 Intent intent = new Intent(getApplicationContext(), Home.class);
                 startActivity(intent);
                 finish();
