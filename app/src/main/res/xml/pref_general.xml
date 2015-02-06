@@ -37,7 +37,7 @@
         <EditTextPreference
             android:title="Max Battery Value"
             android:key="max_batt"
-            android:defaultValue="2716"
+            android:defaultValue="2888"
             android:summary="The maximum millivolt value for your voltage divider if you didn't use the documented resistors"
             android:dependency="advanced_opts"
             android:numeric="integer"/>
