@@ -171,14 +171,9 @@ public class BluetoothScan extends ListActivity implements NavigationDrawerFragm
             bluetooth_adapter.stopLeScan(mLeScanCallback);
             is_scanning = false;
         }
-        if (device.getType() != BluetoothDevice.DEVICE_TYPE_LE)
-        {
-            Log.d(TAG, "device non BLE");
-            BluetoothReader.startBluetoothReader(device, getApplicationContext());
-        } else {
-            startService(serviceIntent);
-            startActivity(intent);
-        }
+
+        startService(serviceIntent);
+        startActivity(intent);
 
         finish();
     }
