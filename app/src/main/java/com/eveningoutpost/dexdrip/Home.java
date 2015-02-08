@@ -214,7 +214,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     public void displayCurrentInfo() {
         DecimalFormat df = new DecimalFormat("#");
         df.setMaximumFractionDigits(0);
-        float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("min_batt","2560"));
+        float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("min_batt","2550"));
         float maximumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("max_batt","2888"));
 
         final TextView currentBgValueText = (TextView)findViewById(R.id.currentBgValueRealTime);
