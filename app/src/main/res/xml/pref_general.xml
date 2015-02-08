@@ -49,7 +49,7 @@
         <EditTextPreference
             android:title="Minimum Battery Value"
             android:key="min_batt"
-            android:defaultValue="2560"
+            android:defaultValue="2545"
             android:summary="The minimum millivolt value for your voltage divider if you didn't use the documented resistors"
             android:dependency="advanced_opts"
             android:numeric="integer"/>
