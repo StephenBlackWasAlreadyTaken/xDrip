@@ -14,6 +14,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.widget.DrawerLayout;
 import android.view.View;
 import android.widget.TextView;
+import android.view.WindowManager;
 
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
@@ -65,7 +66,6 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         checkEula();
         setContentView(R.layout.activity_home);
-
     }
 
     public void checkEula() {
@@ -214,7 +214,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     public void displayCurrentInfo() {
         DecimalFormat df = new DecimalFormat("#");
         df.setMaximumFractionDigits(0);
-        float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("min_batt","2063"));
+        float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("min_batt","2580"));
         float maximumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("max_batt","2888"));
 
         final TextView currentBgValueText = (TextView)findViewById(R.id.currentBgValueRealTime);
@@ -226,8 +226,13 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         } else {
             currentDexDripBattText.setVisibility(View.VISIBLE);
         }
-            
-        
+
+        if (prefs.getBoolean("preventSleep",false)) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }   else {
+            getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+
         if ((currentBgValueText.getPaintFlags() & Paint.STRIKE_THRU_TEXT_FLAG) > 0) {
             currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
             currentDexDripBattText.setPaintFlags((currentDexDripBattText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG)));
