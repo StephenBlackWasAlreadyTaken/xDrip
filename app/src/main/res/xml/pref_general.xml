@@ -27,6 +27,11 @@
             android:summary="DexDrip will attempt to predict readings each minute based on the past few values, this is not always accurate."
             android:defaultValue="false" />
         <CheckBoxPreference
+            android:key="preventSleep"
+            android:title="Prevent Phone from Sleeping"
+            android:summary="If enabled, Dexdrip will continue to display and not allow the screen to turn off."
+            android:defaultValue="false" />
+        <CheckBoxPreference
             android:title="Display DexDrip Battery Level"
             android:key="display_dd_batt"
             android:defaultValue="false" />
@@ -44,7 +49,7 @@
         <EditTextPreference
             android:title="Minimum Battery Value"
             android:key="min_batt"
-            android:defaultValue="2063"
+            android:defaultValue="2560"
             android:summary="The minimum millivolt value for your voltage divider if you didn't use the documented resistors"
             android:dependency="advanced_opts"
             android:numeric="integer"/>
