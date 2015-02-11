@@ -10,6 +10,8 @@ Android Application that collects dexcom signals, allows calibrations, and (soon
 * Calibration Check ins, [read about them here](http://bit.ly/1LdmZiN)
 * Ability to turn on or off predictive values on the graph
 * Local Broadcasting so apps like [NightWatch](http://bit.ly/1HcSTsB) can update to the most recent BG data with no internet connection required
+* Added ability to prevent phone from sleeping
+* Added displaying of DexDrip battery levels and configuration options for displaying and min and max battery levels due to the variances in the LiPo battery from Adafruit.
 
 ## Features that are complete
 * Nightscout Uploading
