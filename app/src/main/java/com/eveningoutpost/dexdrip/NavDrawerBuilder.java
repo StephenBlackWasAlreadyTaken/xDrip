@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import com.eveningoutpost.dexdrip.Models.ActiveBgAlert;
 import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.Calibration;
 import com.eveningoutpost.dexdrip.Tables.BgReadingTable;
@@ -62,6 +63,9 @@ public class NavDrawerBuilder {
                 options.add("Scan for BT");
             }
         }
+        if(ActiveBgAlert.getOnly() != null) {
+            options.add("Snooze alarm");
+        }
         options.add("Settings");
         options.add("Fake Numbers");
 //        options.add("Add Double Calibration");
@@ -105,6 +109,9 @@ public class NavDrawerBuilder {
             if(CollectionServiceStarter.isBTWixel(context)) {
                 options.add(new Intent(context, BluetoothScan.class));
             }
+        }
+        if(ActiveBgAlert.getOnly() != null) {
+            options.add(new Intent(context, SnoozActivity.class));
         }
         options.add(new Intent(context, SettingsActivity.class));
         options.add(new Intent(context, FakeNumbers.class));
