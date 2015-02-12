@@ -45,7 +45,6 @@ public class Calibration extends Model {
     @Column(name = "sensor", index = true)
     public Sensor sensor;
 
-
     @Expose
     @Column(name = "bg")
     public double bg;
@@ -177,6 +176,7 @@ public class Calibration extends Model {
         higherCalibration.intercept = higher_bg;
         higherCalibration.sensor = sensor;
         higherCalibration.estimate_raw_at_time_of_calibration = highBgReading.age_adjusted_raw_value;
+        higherCalibration.adjusted_raw_value = highBgReading.age_adjusted_raw_value;
         higherCalibration.raw_value = highBgReading.raw_data;
         higherCalibration.raw_timestamp = highBgReading.timestamp;
         higherCalibration.save();
@@ -192,6 +192,7 @@ public class Calibration extends Model {
         lowerCalibration.intercept = lower_bg;
         lowerCalibration.sensor = sensor;
         lowerCalibration.estimate_raw_at_time_of_calibration = lowBgReading.age_adjusted_raw_value;
+        lowerCalibration.adjusted_raw_value = lowBgReading.age_adjusted_raw_value;
         lowerCalibration.raw_value = lowBgReading.raw_data;
         lowerCalibration.raw_timestamp = lowBgReading.timestamp;
         lowerCalibration.save();
@@ -216,6 +217,7 @@ public class Calibration extends Model {
             calibration.sensor_uuid = sensor.uuid;
             calibration.slope_confidence = .5;
             calibration.distance_from_estimate = 0;
+            calibration.check_in = false;
             calibration.sensor_confidence = ((-0.0018 * calibration.bg * calibration.bg) + (0.6657 * calibration.bg) + 36.7505) / 100;
 
             calibration.sensor_age_at_time_of_estimation = calibration.timestamp - sensor.started_at;
@@ -225,10 +227,12 @@ public class Calibration extends Model {
             calculate_w_l_s();
             CalibrationSendQueue.addToQueue(calibration, context);
         }
+        adjustRecentBgReadings(5);
         CalibrationRequest.createOffset(lowerCalibration.bg, 35);
         Notifications.notificationSetter(context);
     }
 
+    //Create Calibration Checkin
     public static void create(CalRecord[] calRecords, Context context, boolean override) {
         //TODO: Change calibration.last and other queries to order calibrations by timestamp rather than ID
         Log.w("CALIBRATION-CHECK-IN: ", "Creating Calibration Record");
@@ -287,6 +291,7 @@ public class Calibration extends Model {
 
                     calibration.save();
 
+                    adjustRecentBgReadings(5);
                     CalibrationSendQueue.addToQueue(calibration, context);
                     Calibration.requestCalibrationIfRangeTooNarrow();
                 }
@@ -335,7 +340,7 @@ public class Calibration extends Model {
             if (bgReading != null) {
                 calibration.sensor = sensor;
                 calibration.bg = bg;
-
+                calibration.check_in = false;
                 calibration.timestamp = new Date().getTime();
                 calibration.raw_value = bgReading.raw_data;
                 calibration.adjusted_raw_value = bgReading.age_adjusted_raw_value;
@@ -422,13 +427,13 @@ public class Calibration extends Model {
                 calibration.intercept = ((n * p) - (m * q)) / d;
                 calibration.slope = ((l * q) - (m * p)) / d;
                 if ((calibrations.size() == 2 && calibration.slope < 0.95) || (calibration.slope < 0.85)) { // I have not seen a case where a value below 7.5 proved to be accurate but we should keep an eye on this
-                    calibration.slope = calibration.slopeOOBHandler();
+                    calibration.slope = calibration.slopeOOBHandler(0);
                     if(calibrations.size() > 2) { calibration.possible_bad = true; }
                     calibration.intercept = calibration.bg - (calibration.estimate_raw_at_time_of_calibration * calibration.slope);
                     CalibrationRequest.createOffset(calibration.bg, 25);
                 }
-                if ((calibrations.size() == 2 && calibration.slope > 1.2) || (calibration.slope > 1.35)) {
-                    calibration.slope = calibration.slopeOOBHandler();
+                if ((calibrations.size() == 2 && calibration.slope > 1.3) || (calibration.slope > 1.4)) {
+                    calibration.slope = calibration.slopeOOBHandler(1);
                     if(calibrations.size() > 2) { calibration.possible_bad = true; }
                     calibration.intercept = calibration.bg - (calibration.estimate_raw_at_time_of_calibration * calibration.slope);
                     CalibrationRequest.createOffset(calibration.bg, 25);
@@ -442,18 +447,31 @@ public class Calibration extends Model {
         }
     }
 
-    private double slopeOOBHandler() {
+    private double slopeOOBHandler(int status) {
     // If the last slope was reasonable and reasonably close, use that, otherwise use a slope that may be a little steep, but its best to play it safe when uncertain
         List<Calibration> calibrations = Calibration.latest(3);
         Calibration thisCalibration = calibrations.get(0);
-        if (calibrations.size() == 3) {
-            if((Math.abs(thisCalibration.bg - thisCalibration.estimate_bg_at_time_of_calibration) < 30) && (calibrations.get(1).possible_bad != null && calibrations.get(1).possible_bad == true)) {
-               return calibrations.get(1).slope;
-            } else {
-               return Math.max(((-0.048) * (thisCalibration.sensor_age_at_time_of_estimation / (60000 * 60 * 24))) + 1.1, 1);
+        if(status == 0) {
+            if (calibrations.size() == 3) {
+                if ((Math.abs(thisCalibration.bg - thisCalibration.estimate_bg_at_time_of_calibration) < 30) && (calibrations.get(1).possible_bad != null && calibrations.get(1).possible_bad == true)) {
+                    return calibrations.get(1).slope;
+                } else {
+                    return Math.max(((-0.048) * (thisCalibration.sensor_age_at_time_of_estimation / (60000 * 60 * 24))) + 1.1, 1.08);
+                }
+            } else if (calibrations.size() == 2) {
+                return Math.max(((-0.048) * (thisCalibration.sensor_age_at_time_of_estimation / (60000 * 60 * 24))) + 1.1, 1.15);
             }
-        } else if (calibrations.size() == 2) {
-            return Math.max(((-0.048) * (thisCalibration.sensor_age_at_time_of_estimation / (60000 * 60 * 24))) + 1.1, 1.05);
+            return 1;
+        } else {
+            if (calibrations.size() == 3) {
+                if ((Math.abs(thisCalibration.bg - thisCalibration.estimate_bg_at_time_of_calibration) < 30) && (calibrations.get(1).possible_bad != null && calibrations.get(1).possible_bad == true)) {
+                    return calibrations.get(1).slope;
+                } else {
+                    return 1.3;
+                }
+            } else if (calibrations.size() == 2) {
+                return 1.2;
+            }
         }
         return 1;
     }
@@ -476,11 +494,13 @@ public class Calibration extends Model {
         Log.w(TAG, "CALIBRATIONS TIME PERCENTAGE WEIGHT: " + time_percentage);
         return Math.max((((((slope_confidence + sensor_confidence) * (time_percentage))) / 2) * 100), 1);
     }
-
-    public static void adjustRecentBgReadings() { // This just adjust the last 30 bg readings transition from one calibration point to the next
+    public static void adjustRecentBgReadings() {// This just adjust the last 30 bg readings transition from one calibration point to the next
+        adjustRecentBgReadings(30);
+    }
+    public static void adjustRecentBgReadings(int adjustCount) {
         //TODO: add some handling around calibration overrides as they come out looking a bit funky
         List<Calibration> calibrations = Calibration.latest(3);
-        List<BgReading> bgReadings = BgReading.latest(30);
+        List<BgReading> bgReadings = BgReading.latest(adjustCount);
         if (calibrations.size() == 3) {
             int denom = bgReadings.size();
             Calibration latestCalibration = calibrations.get(0);
@@ -622,7 +642,7 @@ public class Calibration extends Model {
                 .where("slope_confidence != 0")
                 .where("sensor_confidence != 0")
                 .where("timestamp > ?", (new Date().getTime() - (60000 * 60 * 24 * 4)))
-                .orderBy("_ID desc")
+                .orderBy("timestamp desc")
                 .execute();
     }
 
