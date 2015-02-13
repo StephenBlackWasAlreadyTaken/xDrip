@@ -36,12 +36,10 @@ import com.eveningoutpost.dexdrip.UtilityModels.Notifications;
 import com.eveningoutpost.dexdrip.utils.DatabaseUtil;
 import com.eveningoutpost.dexdrip.utils.ShareNotification;
 
-
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
-import java.lang.Math;
 
 import lecho.lib.hellocharts.ViewportChangeListener;
 import lecho.lib.hellocharts.gesture.ZoomType;
@@ -241,8 +239,6 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
     public void displayCurrentInfo() {
         DecimalFormat df = new DecimalFormat("#");
         df.setMaximumFractionDigits(0);
-        float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("min_batt","2545"));
-        float maximumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString("max_batt","2888"));
 
         final TextView currentBgValueText = (TextView)findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
@@ -278,7 +274,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 currentBgValueText.setText(bgGraphBuilder.unitized_string(estimate));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                currentDexDripBattText.setText("DexDrip Battery: "+ Integer.toString(Math.round((lastBgreading.wixel_battery_level - minimumBatterySetting)/(maximumBatterySetting - minimumBatterySetting)*100)) + "%");
+                currentDexDripBattText.setText("DexDrip Battery: "+ lastBgreading.getWixelBatteryLevel(getApplicationContext()) + "%");
                     if(!predictive){
                     estimate=lastBgreading.calculated_value;
                     String stringEstimate = bgGraphBuilder.unitized_string(estimate);

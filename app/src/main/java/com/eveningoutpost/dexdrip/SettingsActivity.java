@@ -56,6 +56,10 @@ public class SettingsActivity extends PreferenceActivity {
         getPreferenceScreen().addPreference(fakeHeader);
         addPreferencesFromResource(R.xml.pref_wifi);
 
+        fakeHeader = new PreferenceCategory(this);
+        getPreferenceScreen().addItemFromInflater(fakeHeader);
+        addPreferencesFromResource(R.xml.pref_display);
+
         bindPreferenceSummaryToValue(findPreference("highValue"));
         bindPreferenceSummaryToValue(findPreference("lowValue"));
         bindPreferenceSummaryToValue(findPreference("bg_snooze"));
@@ -69,7 +73,6 @@ public class SettingsActivity extends PreferenceActivity {
         bindPreferenceSummaryToValue(findPreference("units"));
         bindPreferenceSummaryToValue(findPreference("max_batt"));
         bindPreferenceSummaryToValue(findPreference("min_batt"));
-//        bindPreferenceSummaryToValue(findPreference("display_dd_batt"));
     }
 
     private static Preference.OnPreferenceChangeListener sBindPreferenceSummaryToValueListener = new Preference.OnPreferenceChangeListener() {

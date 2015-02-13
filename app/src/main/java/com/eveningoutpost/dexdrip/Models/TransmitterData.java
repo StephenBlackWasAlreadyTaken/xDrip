@@ -56,7 +56,7 @@ public class TransmitterData extends Model {
         if(data.length > 1) {
             transmitterData.sensor_battery_level = Integer.parseInt(data[1]);
         }
-        if (Integer.parseInt(data[0]) < 1000) { return null; } // Sometimes the HM10 sends the battery level and readings in separate transmissions, filter out these incomplete packets!
+        if (Integer.parseInt(data[0]) < 1000 || Float.parseFloat(data[2]) < 2000) { return null; } // Sometimes the HM10 sends the battery level and readings in separate transmissions, filter out these incomplete packets!
         transmitterData.raw_data = Integer.parseInt(data[0]);
         transmitterData.wixel_battery_level = Float.parseFloat(data[2]);
         transmitterData.timestamp = new Date().getTime();
@@ -64,6 +64,10 @@ public class TransmitterData extends Model {
 
         transmitterData.save();
         return transmitterData;
+    }
+
+    public static TransmitterData create(int raw_data ,int sensor_battery_level, long timestamp) {
+        return TransmitterData.create(raw_data, sensor_battery_level, timestamp, 2800); //Default value when not needed
     }
 
     public static TransmitterData create(int raw_data ,int sensor_battery_level, long timestamp, float wixel_battery_level) {

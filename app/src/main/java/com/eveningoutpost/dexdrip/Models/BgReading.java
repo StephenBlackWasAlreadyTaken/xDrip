@@ -507,4 +507,12 @@ public class BgReading extends Model {
                 .create();
         return gson.toJson(this);
     }
+
+    public String getWixelBatteryLevel(Context appContext) {
+        BgReading lastBgreading = BgReading.lastNoSenssor();
+        float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(appContext).getString("min_batt","2545"));
+        float maximumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(appContext).getString("max_batt","2888"));
+
+        return Integer.toString(Math.round((lastBgreading.wixel_battery_level - minimumBatterySetting)/(maximumBatterySetting - minimumBatterySetting)*100));
+    }
 }
