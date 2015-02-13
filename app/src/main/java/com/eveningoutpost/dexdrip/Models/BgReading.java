@@ -98,6 +98,9 @@ public class BgReading extends Model {
     @Expose
     @Column(name = "sensor_uuid", index = true)
     public String sensor_uuid;
+    
+    @Column(name = "wixel_battery_level")
+    public float wixel_battery_level;
 
     @Column(name = "snyced")
     public boolean synced;
@@ -155,7 +158,7 @@ public class BgReading extends Model {
     }
 
     //*******CLASS METHODS***********//
-    public static BgReading create(double raw_data, Context context) {
+    public static BgReading create(double raw_data, float wixel_battery_level, Context context) {
         BgReading bgReading = new BgReading();
         Sensor sensor = Sensor.currentSensor();
         if (sensor != null) {
@@ -169,6 +172,7 @@ public class BgReading extends Model {
                 bgReading.time_since_sensor_started = bgReading.timestamp - sensor.started_at;
                 bgReading.synced = false;
                 bgReading.calibration_flag = false;
+                bgReading.wixel_battery_level = wixel_battery_level;
 
                 bgReading.calculateAgeAdjustedRawValue();
 
@@ -185,6 +189,7 @@ public class BgReading extends Model {
                 bgReading.uuid = UUID.randomUUID().toString();
                 bgReading.time_since_sensor_started = bgReading.timestamp - sensor.started_at;
                 bgReading.synced = false;
+                bgReading.wixel_battery_level = wixel_battery_level;
 
                 bgReading.calculateAgeAdjustedRawValue();
 
@@ -501,5 +506,13 @@ public class BgReading extends Model {
                 .serializeSpecialFloatingPointValues()
                 .create();
         return gson.toJson(this);
+    }
+
+    public String getWixelBatteryLevel(Context appContext) {
+        BgReading lastBgreading = BgReading.lastNoSenssor();
+        float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(appContext).getString("min_batt","2545"));
+        float maximumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(appContext).getString("max_batt","2888"));
+
+        return Integer.toString(Math.round((lastBgreading.wixel_battery_level - minimumBatterySetting)/(maximumBatterySetting - minimumBatterySetting)*100));
     }
 }

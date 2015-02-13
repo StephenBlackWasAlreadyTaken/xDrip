@@ -13,13 +13,17 @@ import android.graphics.Paint;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.widget.DrawerLayout;
+
+import android.view.View;
+import android.widget.TextView;
+import android.view.WindowManager;
+import android.widget.Toast;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
@@ -31,7 +35,6 @@ import com.eveningoutpost.dexdrip.UtilityModels.Intents;
 import com.eveningoutpost.dexdrip.UtilityModels.Notifications;
 import com.eveningoutpost.dexdrip.utils.DatabaseUtil;
 import com.eveningoutpost.dexdrip.utils.ShareNotification;
-
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -77,7 +80,6 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         checkEula();
         setContentView(R.layout.activity_home);
-
     }
 
     public void checkEula() {
@@ -240,8 +242,23 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
 
         final TextView currentBgValueText = (TextView)findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
+        final TextView currentDexDripBattText = (TextView)findViewById(R.id.currentDexDripBatt);
+        
+        if (PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("display_dd_batt", false) == false) {
+            currentDexDripBattText.setVisibility(View.INVISIBLE);
+        } else {
+            currentDexDripBattText.setVisibility(View.VISIBLE);
+        }
+
+        if (prefs.getBoolean("preventSleep",false)) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }   else {
+            getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+
         if ((currentBgValueText.getPaintFlags() & Paint.STRIKE_THRU_TEXT_FLAG) > 0) {
             currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            currentDexDripBattText.setPaintFlags((currentDexDripBattText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG)));
         }
         BgReading lastBgreading = BgReading.lastNoSenssor();
         boolean predictive = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("predictive_bg", false);
@@ -257,7 +274,8 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 currentBgValueText.setText(bgGraphBuilder.unitized_string(estimate));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                if(!predictive){
+                currentDexDripBattText.setText("DexDrip Battery: "+ lastBgreading.getWixelBatteryLevel(getApplicationContext()) + "%");
+                    if(!predictive){
                     estimate=lastBgreading.calculated_value;
                     String stringEstimate = bgGraphBuilder.unitized_string(estimate);
                     currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow((lastBgreading.staticSlope() * 60000)));
