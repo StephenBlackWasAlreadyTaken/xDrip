@@ -111,7 +111,7 @@ public class NavDrawerBuilder {
             }
         }
         if(ActiveBgAlert.getOnly() != null) {
-            options.add(new Intent(context, SnoozActivity.class));
+            options.add(new Intent(context, SnoozeActivity.class));
         }
         options.add(new Intent(context, SettingsActivity.class));
         options.add(new Intent(context, FakeNumbers.class));
