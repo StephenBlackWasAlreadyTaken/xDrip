@@ -513,6 +513,10 @@ public class BgReading extends Model {
         float minimumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(appContext).getString("min_batt","2545"));
         float maximumBatterySetting = Float.valueOf(PreferenceManager.getDefaultSharedPreferences(appContext).getString("max_batt","2888"));
 
-        return Integer.toString(Math.round((lastBgreading.wixel_battery_level - minimumBatterySetting)/(maximumBatterySetting - minimumBatterySetting)*100));
+        if (lastBgreading.wixel_battery_level == -1){
+            return "Missing Value";
+        } else {
+            return Integer.toString(Math.round((lastBgreading.wixel_battery_level - minimumBatterySetting) / (maximumBatterySetting - minimumBatterySetting) * 100));
+        }
     }
 }

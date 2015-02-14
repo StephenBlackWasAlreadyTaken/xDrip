@@ -56,9 +56,21 @@ public class TransmitterData extends Model {
         if(data.length > 1) {
             transmitterData.sensor_battery_level = Integer.parseInt(data[1]);
         }
-        if (Integer.parseInt(data[0]) < 1000 || Float.parseFloat(data[2]) < 2000) { return null; } // Sometimes the HM10 sends the battery level and readings in separate transmissions, filter out these incomplete packets!
+        if (Integer.parseInt(data[0]) < 1000) {
+            return null;
+        } // Sometimes the HM10 sends the battery level and readings in separate transmissions, filter out these incomplete packets!
+        //if we don't get all the fields from the BLE module or if we get it and it's corrupted, make it a negative and handle it in the home screen
+        try {
+            if (Float.parseFloat(data[2]) > 100) {
+                transmitterData.wixel_battery_level = Float.parseFloat(data[2]);
+            } else {
+                transmitterData.wixel_battery_level = -1;
+            }
+        } catch (Throwable e) {
+            transmitterData.wixel_battery_level = -1;
+        }
+
         transmitterData.raw_data = Integer.parseInt(data[0]);
-        transmitterData.wixel_battery_level = Float.parseFloat(data[2]);
         transmitterData.timestamp = new Date().getTime();
         transmitterData.uuid = UUID.randomUUID().toString();
 
