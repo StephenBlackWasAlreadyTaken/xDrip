@@ -6,11 +6,9 @@ Note, the following describes what I am currently using and recommend, it could 
  * Also must have BLE support
 * [A Wixel](http://www.pololu.com/product/1337)
  * I recommend the one without headers(linked) if you want to use wires, if you plan to use a breadboard or make a custom PCB feel free to get the one with headers.
-* [An HM-10 BLE Module](http://www.amazon.com/SunFounder-Bluetooth-Master-Compatible-Arduino/dp/B00N7CA8Y6/ref=sr_1_cc_1?s=aps&ie=UTF8&qid=1416917892&sr=1-1-catcorr&keywords=hm10+sunfounder)
- * You can get them [straight from sunfounder](http://www.sunfounder.com/index.php?c=show&id=29&model=HM-10) too but they take forever to ship (I have also seen them on ebay)
- * I use the one linked, its great, make sure yours is 3.3v or lower if you wish to power it through the wixel
- * The android app specificly looks for the uuid of the HM10, any other device may require changes to the android app in order to work
- * The HM11 has been used by at least one person and worked out of the box without any code changes, but your mileage may vary.
+* An HM-10 BLE Module
+ * I removed the link as it seems they replaced the HM10 with a cc41, **DO NOT GET A CC41!!!!!** I use the hm10 formerly sold by sunfounder, if you can find one with the pins at the bottom that is the easiest!
+ * The HM11 has been confirmed working but soldering it is VERY TOUGH
 * [Battery Power](http://www.adafruit.com/products/258)
  * I use the one linked and have no problem getting through a day, I have not done extensive battery testing at this point
  * *EDIT: that one was lasting over 6 days, which seemed like a waste of space, now I use [this 500mAh](http://www.adafruit.com/products/1578) Which gets me two days no problem!
