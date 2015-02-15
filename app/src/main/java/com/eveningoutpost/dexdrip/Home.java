@@ -289,11 +289,11 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                         });
                     wixelAlertDialog.show();
                     }
-                    currentDexDripBattText.setText("DexDrip Battery: " + lastBgreading.getWixelBatteryLevel(getApplicationContext()) + "%");
-                    if(!predictive){
-                    estimate=lastBgreading.calculated_value;
-                    String stringEstimate = bgGraphBuilder.unitized_string(estimate);
-                    currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow((lastBgreading.staticSlope() * 60000)));
+                currentDexDripBattText.setText("DexDrip Battery: " + lastBgreading.getWixelBatteryLevel(getApplicationContext()) + "%");
+                if(!predictive){
+                estimate=lastBgreading.calculated_value;
+                String stringEstimate = bgGraphBuilder.unitized_string(estimate);
+                currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow((lastBgreading.staticSlope() * 60000)));
                 } else {
                     estimate = BgReading.activePrediction();
                     String stringEstimate = bgGraphBuilder.unitized_string(estimate);
