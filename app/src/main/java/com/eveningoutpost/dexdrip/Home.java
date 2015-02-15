@@ -288,8 +288,15 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                             }
                         });
                     wixelAlertDialog.show();
-                    }
+                 }
                 currentDexDripBattText.setText("DexDrip Battery: " + lastBgreading.getWixelBatteryLevel(getApplicationContext()) + "%");
+                if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) <= 50 && Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) >= 15) {
+                    currentDexDripBattText.setTextColor(Color.YELLOW);
+                } else if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) < 15) {
+                    currentDexDripBattText.setTextColor(Color.RED);
+                } else {
+                    currentDexDripBattText.setTextColor(Color.GREEN);
+                }
                 if(!predictive){
                 estimate=lastBgreading.calculated_value;
                 String stringEstimate = bgGraphBuilder.unitized_string(estimate);
