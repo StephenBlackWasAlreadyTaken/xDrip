@@ -14,8 +14,31 @@
         android:key="display_dd_batt"
         android:defaultValue="false" />
     <CheckBoxPreference
+        android:dependency="display_dd_batt"
+        android:key="battery_vibrate"
+        android:title="Vibrate on battery level notifications"
+        android:defaultValue="true" />
+    <CheckBoxPreference
+        android:dependency="display_dd_batt"
+        android:key="battery_lights"
+        android:title="Flash lights on battery level notifications"
+        android:defaultValue="true" />
+    <CheckBoxPreference
+        android:dependency="display_dd_batt"
+        android:key="battery_play_sound"
+        android:title="Play sound on battery level notifications"
+        android:defaultValue="true" />
+    <RingtonePreference
+        android:dependency="display_dd_batt"
+        android:key="battery_notification_sound"
+        android:title="Battery Level Alert Sound"
+        android:ringtoneType="notification"
+        android:summary="Set sound used for alerting on battery levels."
+        android:defaultValue="content://settings/system/notification_sound" />
+    <CheckBoxPreference
         android:title="Advanced Options"
         android:key="advanced_opts"
+        android:dependency="display_dd_batt"
         android:defaultValue="false" />
     <EditTextPreference
         android:title="Max Battery Value"

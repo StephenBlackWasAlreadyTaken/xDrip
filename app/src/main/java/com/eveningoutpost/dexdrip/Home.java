@@ -46,6 +46,7 @@ import java.util.List;
 import lecho.lib.hellocharts.ViewportChangeListener;
 import lecho.lib.hellocharts.gesture.ZoomType;
 import lecho.lib.hellocharts.model.Viewport;
+import lecho.lib.hellocharts.util.Utils;
 import lecho.lib.hellocharts.view.LineChartView;
 import lecho.lib.hellocharts.view.PreviewLineChartView;
 
@@ -276,7 +277,7 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 currentBgValueText.setText(bgGraphBuilder.unitized_string(estimate));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) < 15 && PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("display_dd_batt", false) == true) {
+                /*if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) < 15 && PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("display_dd_batt", false) == true) {
                     AlertDialog wixelAlertDialog = new AlertDialog.Builder(this).create();
                     wixelAlertDialog.setTitle("Warning");
                     wixelAlertDialog.setMessage("DexDrip battery is less than 15%");
@@ -288,14 +289,14 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                             }
                         });
                     wixelAlertDialog.show();
-                 }
+                }*/
                 currentDexDripBattText.setText("DexDrip Battery: " + lastBgreading.getWixelBatteryLevel(getApplicationContext()) + "%");
-                if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) <= 50 && Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) >= 15) {
-                    currentDexDripBattText.setTextColor(Color.YELLOW);
-                } else if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) < 15) {
-                    currentDexDripBattText.setTextColor(Color.RED);
+                if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) >= 25) {
+                    currentDexDripBattText.setTextColor(Color.WHITE);
+                } else if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) >= 15 && Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) <= 24) {
+                    currentDexDripBattText.setTextColor(Utils.COLOR_ORANGE);
                 } else {
-                    currentDexDripBattText.setTextColor(Color.GREEN);
+                    currentDexDripBattText.setTextColor(Utils.COLOR_RED);
                 }
                 if(!predictive){
                 estimate=lastBgreading.calculated_value;

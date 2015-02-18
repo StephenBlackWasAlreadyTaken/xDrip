@@ -5,12 +5,14 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.content.Context;
 
 import com.eveningoutpost.dexdrip.AddCalibration;
 import com.eveningoutpost.dexdrip.DoubleCalibrationActivity;
@@ -18,6 +20,7 @@ import com.eveningoutpost.dexdrip.Home;
 import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.Calibration;
 import com.eveningoutpost.dexdrip.Models.CalibrationRequest;
+import com.eveningoutpost.dexdrip.Models.User;
 import com.eveningoutpost.dexdrip.Models.UserNotification;
 import com.eveningoutpost.dexdrip.R;
 import com.eveningoutpost.dexdrip.Sensor;
@@ -45,6 +48,12 @@ public class Notifications {
     public static boolean calibration_sound;
     public static int calibration_snooze;
     public static String calibration_notification_sound;
+    
+    public static boolean dd_notifications;
+    public static boolean dd_vibrate;
+    public static boolean dd_lights;
+    public static boolean dd_sound;
+    public static String dd_notification_sound;
 
     public static Context mContext;
     public static int currentVolume;
@@ -55,6 +64,7 @@ public class Notifications {
     public static final int doubleCalibrationNotificationId = 003;
     public static final int extraCalibrationNotificationId = 004;
     public static final int exportCompleteNotificationId = 005;
+    public static final int ddBatteryNotificationId = 006;
 
     public static void setNotificationSettings(Context context) {
         mContext = context;
@@ -73,6 +83,12 @@ public class Notifications {
         calibration_sound = prefs.getBoolean("calibration_play_sound", true);
         calibration_snooze = Integer.parseInt(prefs.getString("calibration_snooze", "20"));
         calibration_notification_sound = prefs.getString("calibration_notification_sound", "content://settings/system/notification_sound");
+        
+        dd_notifications = prefs.getBoolean("display_dd_batt", false);
+        dd_vibrate = prefs.getBoolean("battery_vibrate", false);
+        dd_lights = prefs.getBoolean("batttery_lights", false);
+        dd_sound = prefs.getBoolean("battery_play_sound", false);
+        dd_notification_sound = prefs.getString("battery_notification_sound", "content://settings/system/notification_sound");
     }
 
     public static void notificationSetter(Context context) {
@@ -85,6 +101,7 @@ public class Notifications {
         List<BgReading> bgReadings = BgReading.latest(3);
         List<Calibration> calibrations = Calibration.allForSensorInLastFourDays();
         BgReading bgReading = bgReadings.get(0);
+        Integer batteryLevel = Integer.parseInt(bgReading.getWixelBatteryLevel(mContext));
 
         if (bg_notifications && sensor != null) {
             if (bgGraphBuilder.unitized(bgReading.calculated_value) >= high || bgGraphBuilder.unitized(bgReading.calculated_value) <= low) {
@@ -116,6 +133,12 @@ public class Notifications {
         } else {
             clearAllCalibrationNotifications();
         }
+        
+        if (dd_notifications) {
+            if (batteryLevel < 15) {
+                wixelBatteryLevelAlert();
+            } else { clearBattAlert(); }
+        }
     }
 
     public static void soundAlert(String soundUri) {
@@ -143,6 +166,9 @@ public class Notifications {
         notificationDismiss(extraCalibrationNotificationId);
         notificationDismiss(doubleCalibrationNotificationId);
     }
+    public static void clearAllBatteryNotifications() {
+        notificationDismiss(ddBatteryNotificationId);        
+    }
 
 
     public static void bgNotificationCreate(String title, String content, Intent intent, int notificationId) {
@@ -166,6 +192,16 @@ public class Notifications {
         mNotifyMgr.notify(notificationId, mBuilder.build());
     }
 
+    public static void ddBatteryNotificationCreate(String title, String content, Intent intent, int notificationId) {
+        NotificationCompat.Builder mBuilder = notificationBuilder(title, content, intent);
+        if (dd_vibrate) { mBuilder.setVibrate(vibratePattern);}
+        if (dd_lights) { mBuilder.setLights(Color.RED, 300, 1000);}     
+        if (dd_sound) {mBuilder.setSound(Uri.parse(dd_notification_sound), AudioAttributes.FLAG_AUDIBILITY_ENFORCED);}
+        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(mContext.NOTIFICATION_SERVICE);
+        mNotifyMgr.cancel(notificationId);
+        mNotifyMgr.notify(notificationId, mBuilder.build());
+    }
+    
     public static void notificationUpdate(String title, String content, Intent intent, int notificationId) {
         NotificationCompat.Builder mBuilder = notificationBuilder(title, content, intent);
         NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(mContext.NOTIFICATION_SERVICE);
@@ -243,6 +279,18 @@ public class Notifications {
         }
     }
 
+    public static void wixelBatteryLevelAlert() {
+        UserNotification userNotification = UserNotification.wixelBatteryAlert();
+        if (userNotification == null) {
+            if (userNotification != null) { userNotification.delete();}
+            UserNotification newUserNotification = UserNotification.create("DexDrip Battery Level Alert", "wixel_battery_alert");
+            String title = "DexDrip Battery Level Alert";
+            String content = "The DexDrip battery level is less than 15%";
+            Intent intent = new Intent(mContext, Home.class);
+            ddBatteryNotificationCreate(title, content, intent, ddBatteryNotificationId);
+        }
+        
+    }
     public static void clearCalibrationRequest() {
         UserNotification userNotification = UserNotification.lastCalibrationAlert();
         if (userNotification != null) {
@@ -272,6 +320,14 @@ public class Notifications {
         if (userNotification != null) {
             userNotification.delete();
             notificationDismiss(BgNotificationId);
+        }
+    }
+    
+    public static void clearBattAlert() {
+        UserNotification userNotification = UserNotification.wixelBatteryAlert();
+        if (userNotification != null) {
+            userNotification.delete();;
+            notificationDismiss(ddBatteryNotificationId);
         }
     }
 }

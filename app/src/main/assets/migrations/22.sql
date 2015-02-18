@@ -1,0 +1,1 @@
+ALTER TABLE Notifications ADD COLUMN wixel_battery_alert BOOLEAN;
