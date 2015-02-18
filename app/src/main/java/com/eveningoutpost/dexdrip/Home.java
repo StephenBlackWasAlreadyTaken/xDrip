@@ -277,19 +277,6 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 currentBgValueText.setText(bgGraphBuilder.unitized_string(estimate));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                /*if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) < 15 && PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("display_dd_batt", false) == true) {
-                    AlertDialog wixelAlertDialog = new AlertDialog.Builder(this).create();
-                    wixelAlertDialog.setTitle("Warning");
-                    wixelAlertDialog.setMessage("DexDrip battery is less than 15%");
-                    wixelAlertDialog.setButton("OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog,
-                        int which) {
-                            dialog.dismiss();
-                            }
-                        });
-                    wixelAlertDialog.show();
-                }*/
                 currentDexDripBattText.setText("DexDrip Battery: " + lastBgreading.getWixelBatteryLevel(getApplicationContext()) + "%");
                 if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) >= 25) {
                     currentDexDripBattText.setTextColor(Color.WHITE);
