@@ -58,6 +58,22 @@
                     android:paddingEnd="20dp"
                     android:textSize="50dp"
                     android:paddingTop="0dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#07000000"
+                    android:id="@+id/currentDexDripBatt"
+                    android:gravity="right"
+                    android:paddingEnd="30dp"
+                    android:textSize="12dp"
+                    android:paddingTop="0dp"
+                    android:layout_alignParentEnd="false"
+                    android:layout_alignParentTop="true"
+                    android:layout_alignTop="@+id/notices"
+                    android:textColor="#ff00ff01"
+                    android:enabled="false"
+                    android:visibility="visible" />
             </RelativeLayout>
 
             <lecho.lib.hellocharts.view.PreviewLineChartView

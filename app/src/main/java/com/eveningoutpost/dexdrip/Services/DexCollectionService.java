@@ -353,13 +353,14 @@ public class DexCollectionService extends Service {
 
         Log.w(TAG, "received some data!");
         TransmitterData transmitterData = TransmitterData.create(buffer, len);
+        Log.w(TAG, "Wixel Batt: " + Float.toString(transmitterData.wixel_battery_level));
         if (transmitterData != null) {
             Sensor sensor = Sensor.currentSensor();
             if (sensor != null) {
                 sensor.latest_battery_level = transmitterData.sensor_battery_level;
                 sensor.save();
 
-                BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
+                BgReading bgReading = BgReading.create(transmitterData.raw_data, transmitterData.wixel_battery_level, this);
             } else {
                 Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
             }

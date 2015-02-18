@@ -87,4 +87,9 @@
     <!-- broadcast settings -->
     <string name="pref_title_broadcast_enabled">Broadcast locally</string>
     <string name="pref_summary_broadcast_enabled">Enable local broadcast of data so other apps (eg. NightWatch) can listen on new values</string>
+    
+    <!-- display settings -->
+    <string name="dd_batt_dialog_title">Display DexDrip Battery Level</string>
+    <string name="dd_batt_dialog_message">Enable the display of the DexDrip\'s battery level if the voltage divider has been built into the Wixel</string>>
+    
 </resources>

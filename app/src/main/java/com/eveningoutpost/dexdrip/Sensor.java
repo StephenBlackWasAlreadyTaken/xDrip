@@ -33,7 +33,7 @@ public class Sensor extends Model {
 //    @Expose
     @Column(name = "uuid", index = true)
     public String uuid;
-
+    
     public static Sensor create(double started_at) {
         Sensor sensor = new Sensor();
         sensor.started_at = started_at;

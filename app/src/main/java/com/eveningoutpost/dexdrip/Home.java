@@ -13,13 +13,19 @@ import android.graphics.Paint;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+
+import android.view.View;
+import android.widget.TextView;
+import android.view.WindowManager;
+import android.widget.Toast;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
@@ -32,7 +38,6 @@ import com.eveningoutpost.dexdrip.UtilityModels.Notifications;
 import com.eveningoutpost.dexdrip.utils.DatabaseUtil;
 import com.eveningoutpost.dexdrip.utils.ShareNotification;
 
-
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.Date;
@@ -41,6 +46,7 @@ import java.util.List;
 import lecho.lib.hellocharts.ViewportChangeListener;
 import lecho.lib.hellocharts.gesture.ZoomType;
 import lecho.lib.hellocharts.model.Viewport;
+import lecho.lib.hellocharts.util.Utils;
 import lecho.lib.hellocharts.view.LineChartView;
 import lecho.lib.hellocharts.view.PreviewLineChartView;
 
@@ -77,7 +83,6 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
         prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         checkEula();
         setContentView(R.layout.activity_home);
-
     }
 
     public void checkEula() {
@@ -240,8 +245,23 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
 
         final TextView currentBgValueText = (TextView)findViewById(R.id.currentBgValueRealTime);
         final TextView notificationText = (TextView)findViewById(R.id.notices);
+        final TextView currentDexDripBattText = (TextView)findViewById(R.id.currentDexDripBatt);
+        
+        if (PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("display_dd_batt", false) == false) {
+            currentDexDripBattText.setVisibility(View.INVISIBLE);
+        } else {
+            currentDexDripBattText.setVisibility(View.VISIBLE);
+        }
+
+        if (prefs.getBoolean("preventSleep",false)) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }   else {
+            getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        }
+
         if ((currentBgValueText.getPaintFlags() & Paint.STRIKE_THRU_TEXT_FLAG) > 0) {
             currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            currentDexDripBattText.setPaintFlags((currentDexDripBattText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG)));
         }
         BgReading lastBgreading = BgReading.lastNoSenssor();
         boolean predictive = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean("predictive_bg", false);
@@ -257,10 +277,18 @@ public class Home extends Activity implements NavigationDrawerFragment.Navigatio
                 currentBgValueText.setText(bgGraphBuilder.unitized_string(estimate));
                 currentBgValueText.setPaintFlags(currentBgValueText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
+                currentDexDripBattText.setText("DexDrip Battery: " + lastBgreading.getWixelBatteryLevel(getApplicationContext()) + "%");
+                if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) >= 25) {
+                    currentDexDripBattText.setTextColor(Color.WHITE);
+                } else if (Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) >= 15 && Integer.parseInt(lastBgreading.getWixelBatteryLevel(getApplicationContext())) <= 24) {
+                    currentDexDripBattText.setTextColor(Utils.COLOR_ORANGE);
+                } else {
+                    currentDexDripBattText.setTextColor(Utils.COLOR_RED);
+                }
                 if(!predictive){
-                    estimate=lastBgreading.calculated_value;
-                    String stringEstimate = bgGraphBuilder.unitized_string(estimate);
-                    currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow((lastBgreading.staticSlope() * 60000)));
+                estimate=lastBgreading.calculated_value;
+                String stringEstimate = bgGraphBuilder.unitized_string(estimate);
+                currentBgValueText.setText( stringEstimate + " " + BgReading.slopeArrow((lastBgreading.staticSlope() * 60000)));
                 } else {
                     estimate = BgReading.activePrediction();
                     String stringEstimate = bgGraphBuilder.unitized_string(estimate);

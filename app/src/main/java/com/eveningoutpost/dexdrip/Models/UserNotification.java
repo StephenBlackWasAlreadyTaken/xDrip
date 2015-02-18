@@ -33,6 +33,9 @@ public class UserNotification extends Model {
 
     @Column(name = "extra_calibration_alert")
     public boolean extra_calibration_alert;
+    
+    @Column(name = "wixel_battery_alert")
+    public boolean wixel_battery_alert;
 
     public static UserNotification lastBgAlert() {
         return new Select()
@@ -63,6 +66,14 @@ public class UserNotification extends Model {
                 .executeSingle();
     }
 
+    public static UserNotification wixelBatteryAlert() {
+        return new Select()
+                .from(UserNotification.class)
+                .where("wixel_battery_alert = ?", true)
+                .orderBy("_ID desc")
+                .executeSingle();
+    }
+        
     public static UserNotification create(String message, String type) {
         UserNotification userNotification = new UserNotification();
         userNotification.timestamp = new Date().getTime();
@@ -75,6 +86,8 @@ public class UserNotification extends Model {
             userNotification.double_calibration_alert = true;
         } else if (type == "extra_calibration_alert") {
             userNotification.extra_calibration_alert = true;
+        } else if (type == "wixel_battery_alert") {
+            userNotification.wixel_battery_alert = true;
         }
         userNotification.save();
         return userNotification;
