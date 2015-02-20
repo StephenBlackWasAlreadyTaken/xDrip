@@ -27,6 +27,7 @@ Note, the following describes what I am currently using and recommend, it could 
  * If you wish to measure the Wixel's battery voltage, you'll need to build a voltage divider using two resistors and a piece of wire
  * You'll need a 1/4w 1K Ohm and a 1/4w 2.2K Ohm resistor.  1/8w should work, and be smaller, but it hasn't been tested
  * Optional:  Small heatshrink tubing to protect the resistors (https://www.adafruit.com/product/344)
+
  ## Putting it together!
  ![SETUP](http://i.imgur.com/EIGki5R.png)
  
