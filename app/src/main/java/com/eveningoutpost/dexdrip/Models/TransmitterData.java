@@ -7,6 +7,7 @@ import com.activeandroid.Model;
 import com.activeandroid.annotation.Column;
 import com.activeandroid.annotation.Table;
 import com.activeandroid.query.Select;
+import com.eveningoutpost.dexdrip.utils.PacketUtil;
 
 import java.util.Date;
 import java.util.UUID;
@@ -74,6 +75,38 @@ public class TransmitterData extends Model {
         transmitterData.raw_data = raw_data ;
         transmitterData.timestamp = timestamp;
         transmitterData.uuid = UUID.randomUUID().toString();
+        transmitterData.save();
+        return transmitterData;
+    }
+
+    public static TransmitterData createFromBinary(byte data[]) {
+        /* this is the C structure packed in data
+           - needs to be in sync with wixel-DexDrip/libraries/include/dexdrip_packet.h
+        struct dexdrip_data_packet {
+            uint32 raw;
+            int16  dexdrip_battery;
+            uint8  dexcom_battery;
+            uint8  padding;
+        };
+        length 8
+        */
+
+        if (data.length != 8) {
+            /* incompatible ABI with wixel */
+            return null;
+        }
+
+        int wixel_battery;
+        TransmitterData transmitterData = new TransmitterData();
+
+        transmitterData.raw_data = PacketUtil.uint32FromBuffer(data, 0);
+        wixel_battery = PacketUtil.int16FromBuffer(data, 4);
+        transmitterData.sensor_battery_level = PacketUtil.uint8FromBuffer(data, 6);
+        transmitterData.timestamp = new Date().getTime();
+        transmitterData.uuid = UUID.randomUUID().toString();
+        Log.d(TAG, "binary transmitter data raw " + transmitterData.raw_data +
+                " sensor battery " + transmitterData.sensor_battery_level +
+                " wixel battery " + wixel_battery);
         transmitterData.save();
         return transmitterData;
     }
