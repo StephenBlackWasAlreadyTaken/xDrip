@@ -1,12 +1,12 @@
 
 A few weeks ago I started a new sensor and kicked off the BattleOfTheDexes
-I compared my DexDrip Alogrithm against the Dexcom 505 Algorithm.
+I compared my xDrip Alogrithm against the Dexcom 505 Algorithm.
 _(obviously its just one sample so nothing conclusive, but the results are in)_
 
 &nbsp;
 
 
-METER | Dexcom | DexDrip
+METER | Dexcom | xDrip
 -----:|-----:|-----:
 105 | 87 | **100**
 181 | **188** | 169
@@ -24,19 +24,19 @@ METER | Dexcom | DexDrip
 
 Overall MARDs:
 * Dexcom: 15.5%
-* DexDrip: **8.7%**
+* xDrip: **8.7%**
 
 &nbsp;
 
-Note that Dexcoms actual MARD as calculated in studies is 9% I believe so its quite possible I had a bum sensor here. Also note that DexDrip got one extra calibration value on the second day (because it asks for one if it thinks things are off at a time when it thinks the calibration will be the most helpful)
+Note that Dexcoms actual MARD as calculated in studies is 9% I believe so its quite possible I had a bum sensor here. Also note that xDrip got one extra calibration value on the second day (because it asks for one if it thinks things are off at a time when it thinks the calibration will be the most helpful)
 
 &nbsp;
 
-I stopped this first comparison here because once I restart the sensor on my Dexcom, DexDrip winds up with a huge advantage as it already knows the slope from the last few days of calibrations wheras dexcom will be starting from scratch. I will do more comparisons each time I change sensors!
+I stopped this first comparison here because once I restart the sensor on my Dexcom, xDrip winds up with a huge advantage as it already knows the slope from the last few days of calibrations wheras dexcom will be starting from scratch. I will do more comparisons each time I change sensors!
 
 &nbsp;
 
-Want to know more about the project? Check it out [HERE](http://stephenblackwasalreadytaken.github.io/DexDrip)
+Want to know more about the project? Check it out [HERE](http://stephenblackwasalreadytaken.github.io/xDrip)
 
 &nbsp;
 
