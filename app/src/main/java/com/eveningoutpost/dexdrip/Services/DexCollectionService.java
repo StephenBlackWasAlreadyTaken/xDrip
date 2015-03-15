@@ -39,6 +39,7 @@ import android.util.Log;
 import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.Models.DexdripPacket;
 import com.eveningoutpost.dexdrip.Sensor;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
 import com.eveningoutpost.dexdrip.UtilityModels.ForegroundServiceStarter;
@@ -74,6 +75,17 @@ public class DexCollectionService extends Service {
     private static final int STATE_DISCONNECTING = BluetoothProfile.STATE_DISCONNECTING;
     private static final int STATE_CONNECTING = BluetoothProfile.STATE_CONNECTING;
     private static final int STATE_CONNECTED = BluetoothProfile.STATE_CONNECTED;
+
+    private static final int PSTATE_NEW_PACKET = 0;
+    private static final int PSTATE_PRIOR_READ_LEN = 1;
+    private static final int PSTATE_INREAD = 2;
+
+    private int mPacketState = PSTATE_NEW_PACKET;
+    private byte mPacket[];
+    private byte mPacketType;
+    private byte mPacketLen;
+    private byte mPacketReadBytes;
+    private long mLastReadTimestamp;
 
     public final static String ACTION_DATA_AVAILABLE = "com.example.bluetooth.le.ACTION_DATA_AVAILABLE";
     public final static UUID DexDripDataService = UUID.fromString(HM10Attributes.HM_10_SERVICE);
@@ -350,18 +362,86 @@ public class DexCollectionService extends Service {
     }
 
     public void setSerialDataToTransmitterRawData(byte[] buffer, int len) {
+        int bufferReadPos = 0;
+        int i = 0;
+        Log.w(TAG, "received some data! " + len);
+        Long timestamp = new Date().getTime();
+        if (timestamp - mLastReadTimestamp > 2000)  {
+            //if there was no read notification for over 2s means we had a malformed short packet;
+            //save the new timestamp and reset state machine
+            mPacketState = PSTATE_NEW_PACKET;
+            mLastReadTimestamp = timestamp;
+        }
 
-        Log.w(TAG, "received some data!");
-        TransmitterData transmitterData = TransmitterData.create(buffer, len);
-        if (transmitterData != null) {
-            Sensor sensor = Sensor.currentSensor();
-            if (sensor != null) {
-                sensor.latest_battery_level = transmitterData.sensor_battery_level;
-                sensor.save();
+        if (mPacketState == PSTATE_NEW_PACKET) {
+            //beginning of a new packet - get type len and as much as available from packet
+            if (len > bufferReadPos) {
+                mPacketType = buffer[bufferReadPos];
+                Log.d(TAG, "read packet type " + mPacketType);
+                if (mPacketType != DexdripPacket.PACKET_DATA) {
+                    Log.e(TAG, "unknown or malformed packet received");
+                    return;
+                }
 
-                BgReading bgReading = BgReading.create(transmitterData.raw_data, this);
-            } else {
-                Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
+                //goto to next state
+                mPacketState = PSTATE_PRIOR_READ_LEN;
+                bufferReadPos++;
+             }
+        }
+
+        if (mPacketState == PSTATE_PRIOR_READ_LEN) {
+            //read the packet length
+            if (len > bufferReadPos) {
+                mPacketLen = buffer[bufferReadPos];
+                Log.d(TAG, "packet len " + mPacketLen);
+                if (mPacketLen > 20) {
+                    mPacketState = PSTATE_NEW_PACKET;
+                    Log.e(TAG, "malformed packet received");
+                    return;
+                }
+                mPacketState = PSTATE_INREAD;
+                mPacket = new byte[mPacketLen];
+                mPacketReadBytes = 0;
+                bufferReadPos++;
+            }
+        }
+
+        if (mPacketState == PSTATE_INREAD) {
+            //read the packet
+            for (i = bufferReadPos; (mPacketReadBytes < mPacketLen) && (i<len); i++, mPacketReadBytes++)
+                mPacket[mPacketReadBytes] = buffer[i];
+            Log.d(TAG, "read " + mPacket);
+        }
+
+        if (mPacketState != PSTATE_INREAD)
+            //haven't make it to read state - need at least one more notification in order to have the full packet
+            return;
+
+        if (mPacketReadBytes != mPacketLen)
+            //read just part of the packet - return and read the next part in following notification
+            return;
+
+        if (i < len) {
+            //had a longer packet than what was expected
+            mPacketState = PSTATE_NEW_PACKET;
+            Log.e(TAG, "received malformed packet");
+            return;
+        }
+
+        //we have the full packet create transmitter data and reset state machine
+        mPacketState = PSTATE_NEW_PACKET;
+        if (mPacketType == DexdripPacket.PACKET_DATA) {
+            TransmitterData transmitterData = TransmitterData.createFromBinary(mPacket);
+            if (transmitterData != null) {
+                Sensor sensor = Sensor.currentSensor();
+                if (sensor != null) {
+                    sensor.latest_battery_level = transmitterData.sensor_battery_level;
+                    sensor.save();
+
+                    BgReading bgReading = BgReading.create(transmitterData.raw_data, this, timestamp);
+                } else {
+                    Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
+                }
             }
         }
     }
