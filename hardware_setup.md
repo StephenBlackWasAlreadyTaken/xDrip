@@ -6,6 +6,7 @@ Note, the following describes what I am currently using and recommend, it could 
  * Also must have BLE support
 * [A Wixel](http://www.pololu.com/product/1337)
  * I recommend the one without headers(linked) if you want to use wires, if you plan to use a breadboard or make a custom PCB feel free to get the one with headers.
+ * A USB A to Mini B cable to connect the Wixel to your computer.  Note that models other than the one linked above may require a different kind of USB cable.
 * An HM-10 BLE Module
  * I removed the link as it seems they replaced the HM10 with a cc41, **DO NOT GET A CC41!!!!!** I use the hm10 formerly sold by sunfounder, if you can find one with the pins at the bottom that is the easiest!
  * The HM11 has been confirmed working but soldering it is VERY TOUGH
