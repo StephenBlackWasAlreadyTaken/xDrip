@@ -250,7 +250,7 @@ public class DexCollectionService extends Service {
         final byte[] data = characteristic.getValue();
 
         if (data != null && data.length > 0) {
-            setSerialDataToTransmitterRawData(data, data.length);
+            setSerialBinaryDataToTransmitterRawData(data, data.length);
         }
     }
 
@@ -362,6 +362,22 @@ public class DexCollectionService extends Service {
     }
 
     public void setSerialDataToTransmitterRawData(byte[] buffer, int len) {
+        Long timestamp = new Date().getTime();
+        TransmitterData transmitterData = TransmitterData.create(buffer, len, timestamp);
+        if (transmitterData != null) {
+            Sensor sensor = Sensor.currentSensor();
+            if (sensor != null) {
+                sensor.latest_battery_level = transmitterData.sensor_battery_level;
+                sensor.save();
+
+                BgReading bgReading = BgReading.create(transmitterData.raw_data, this, timestamp);
+            } else {
+                Log.w(TAG, "No Active Sensor, Data only stored in Transmitter Data");
+            }
+        }
+    }
+
+    public void setSerialBinaryDataToTransmitterRawData(byte[] buffer, int len) {
         int bufferReadPos = 0;
         int i = 0;
         Log.w(TAG, "received some data! " + len);
@@ -379,7 +395,8 @@ public class DexCollectionService extends Service {
                 mPacketType = buffer[bufferReadPos];
                 Log.d(TAG, "read packet type " + mPacketType);
                 if (mPacketType != DexdripPacket.PACKET_DATA) {
-                    Log.e(TAG, "unknown or malformed packet received");
+                    Log.e(TAG, "this is not a binary packet switch to old method");
+                    setSerialDataToTransmitterRawData(buffer, len);
                     return;
                 }
 

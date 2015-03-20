@@ -81,27 +81,37 @@ public class TransmitterData extends Model {
 
     public static TransmitterData createFromBinary(byte data[]) {
         /* this is the C structure packed in data
-           - needs to be in sync with wixel-DexDrip/libraries/include/dexdrip_packet.h
-        struct dexdrip_data_packet {
-            uint32 raw;
-            int16  dexdrip_battery;
-            uint8  dexcom_battery;
-            uint8  padding;
-        };
-        length 8
+           needs to be in sync with wixel-DexDrip/libraries/include/dexdrip_packet.h
+           structure has versioning used only when members are changed;
+
+           Version 1:
+           struct dexdrip_data_packet {
+               uint8 version;
+               uint8 dexcom_battery;
+               uint16 dexdrip_battery;
+               uint32 raw;
+           } dexdrip_data_packet_t;
         */
 
-        if (data.length != 8) {
-            /* incompatible ABI with wixel */
-            return null;
-        }
-
+        int version;
         int wixel_battery;
         TransmitterData transmitterData = new TransmitterData();
 
-        transmitterData.raw_data = PacketUtil.uint32FromBuffer(data, 0);
-        wixel_battery = PacketUtil.int16FromBuffer(data, 4);
-        transmitterData.sensor_battery_level = PacketUtil.uint8FromBuffer(data, 6);
+        version = PacketUtil.uint8FromBuffer(data, 0);
+        if (version == 1) {
+            if (data.length != 8) {
+            /* incompatible ABI with wixel */
+                Log.e(TAG, "corrupted packet - data length " + data.length + " is different than expected " + 8);
+                return null;
+            }
+            transmitterData.sensor_battery_level = PacketUtil.uint8FromBuffer(data, 1);
+            wixel_battery = PacketUtil.uint16FromBuffer(data, 2);
+            transmitterData.raw_data = PacketUtil.uint32FromBuffer(data, 4);
+        } else {
+            Log.e(TAG, "unknown data packet version " + version);
+            return null;
+        }
+
         transmitterData.timestamp = new Date().getTime();
         transmitterData.uuid = UUID.randomUUID().toString();
         Log.d(TAG, "binary transmitter data raw " + transmitterData.raw_data +
