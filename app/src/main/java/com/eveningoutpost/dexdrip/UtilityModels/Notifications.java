@@ -1,5 +1,6 @@
 package com.eveningoutpost.dexdrip.UtilityModels;
 
+import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -9,12 +10,16 @@ import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.eveningoutpost.dexdrip.AddCalibration;
 import com.eveningoutpost.dexdrip.DoubleCalibrationActivity;
 import com.eveningoutpost.dexdrip.Home;
+import com.eveningoutpost.dexdrip.Models.ActiveBgAlert;
+import com.eveningoutpost.dexdrip.Models.AlertType;
 import com.eveningoutpost.dexdrip.Models.BgReading;
 import com.eveningoutpost.dexdrip.Models.Calibration;
 import com.eveningoutpost.dexdrip.Models.CalibrationRequest;
@@ -29,6 +34,8 @@ import java.util.List;
 /**
  * Created by stephenblack on 11/28/14.
  */
+
+
 public class Notifications {
     public static final long[] vibratePattern = {0,1000,300,1000,300,1000};
     public static boolean bg_notifications;
@@ -45,18 +52,33 @@ public class Notifications {
     public static boolean calibration_sound;
     public static int calibration_snooze;
     public static String calibration_notification_sound;
+    private final static String TAG = AlertPlayer.class.getSimpleName();
 
-    public static Context mContext;
-    public static int currentVolume;
-    public static AudioManager manager;
+    Context mContext;
+    int currentVolume;
+    AudioManager manager;
 
-    public static final int BgNotificationId = 001;
-    public static final int calibrationNotificationId = 002;
-    public static final int doubleCalibrationNotificationId = 003;
-    public static final int extraCalibrationNotificationId = 004;
+    final int BgNotificationId = 001;
+    final int calibrationNotificationId = 002;
+    final int doubleCalibrationNotificationId = 003;
+    final int extraCalibrationNotificationId = 004;
     public static final int exportCompleteNotificationId = 005;
+    final static int callbackPeriod = 60000;
 
-    public static void setNotificationSettings(Context context) {
+    private static Notifications instance = null;
+    protected Notifications() {
+       // Exists only to defeat instantiation.
+    }
+    public static Notifications getInstance(Context context) {
+       if(instance == null) {
+          instance = new Notifications();
+          instance.ArmTimer(context, callbackPeriod);
+       }
+       return instance;
+    }
+    
+    
+    private void ReadPerfs(Context context) {
         mContext = context;
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         bg_notifications = prefs.getBoolean("bg_notifications", true);
@@ -75,8 +97,98 @@ public class Notifications {
         calibration_notification_sound = prefs.getString("calibration_notification_sound", "content://settings/system/notification_sound");
     }
 
-    public static void notificationSetter(Context context) {
-        setNotificationSettings(context);
+/*
+ * *************************************************************************************************************
+ * Function for new notifications    
+ */
+    
+     
+    public void FileBasedNotifications(Context context) {
+        ReadPerfs(context);
+        // Make sure we have our alerts set...
+        AlertType.CreateStaticAlerts(context);
+        
+        BgGraphBuilder bgGraphBuilder = new BgGraphBuilder(context);
+        Sensor sensor = Sensor.currentSensor();
+        
+        List<BgReading> bgReadings = BgReading.latest(1);
+        if(bgReadings == null || bgReadings.size() == 0) {
+            // Sensor is stopped, or there is not enough data
+            AlertPlayer.getPlayer().stopAlert(true, false);
+            return;
+        }
+           
+        BgReading bgReading = bgReadings.get(0);
+        
+        Log.e(TAG, "FileBasedNotifications called bgReading.calculated_value = " + bgReading.calculated_value);
+        // TODO: tzachi what is the time of this last bgReading 
+        // TODO: tzachi, what happens if the last reading does not have a sensor, or that sensor was stopped.
+        // What if the sensor was started, but the 2 hours did not still pass? or there is no calibrations.
+        if (bg_notifications && sensor != null && bgReading != null) {
+            AlertType newAlert = AlertType.get_highest_active_alert(bgGraphBuilder.unitized(bgReading.calculated_value), 0);
+            if (newAlert == null) {
+                Log.e(TAG, "FileBasedNotifications - No active notifcation exists, stopping all alerts");
+                // No alert should work, Stop all alerts, but keep the snoozing...
+                AlertPlayer.getPlayer().stopAlert(false, true);
+                return;
+            }
+            
+            AlertType activeBgAlert = ActiveBgAlert.alertTypegetOnly();
+            if(activeBgAlert == null) {
+                Log.e(TAG, "FileBasedNotifications we have a new alert, starting to play it...");
+                // We need to create a new alert  and start playing
+                AlertPlayer.getPlayer().startAlert(context, newAlert);
+                return;
+            }
+            
+            
+            if (activeBgAlert.uuid.equals(newAlert.uuid)) {
+                // This is the same alert. Might need to play again...
+                Log.e(TAG, "FileBasedNotifications we have found an active alert, checking if we need to play it");
+                AlertPlayer.getPlayer().ClockTick(context);
+                return;
+            }
+            // Tzachi: todo, if this alerts have the same importance we should only do a ClockTick ???????????????????????
+            
+            // we have a new alert. If it is more important than the previous one. we need to stop
+            // the older one and start a new one (We need to play even if we were snoozed).
+            // If it is a lower level alert, we should keep being snoozed.
+            
+            
+            // Example, if we have two alerts one for 90 and the other for 80. and we were already alerting for the 80
+            // and we were snoozed. Now bg is 85, the alert for 80 is cleared, but we are alerting for 90.
+            // We should not do anything if we are snoozed for the 80...
+            // If one allert was high and the second one is low however, we alarm in any case (snoozing ignored).
+            boolean opositeDirection = AlertType.OpositeDirection(activeBgAlert, newAlert);
+            AlertType  newHigherAlert = AlertType.HigherAlert(activeBgAlert, newAlert);
+            if ((newHigherAlert == activeBgAlert) && (!opositeDirection)) {
+                // the existing alert is the higher, we should not do anything
+                Log.e(TAG, "FileBasedNotifications The existing alert has the same importance, doing nothing");
+                AlertPlayer.getPlayer().ClockTick(context);
+                return;
+            }
+            
+            // For now, we are stopping the old alert and starting a new one.
+            Log.e(TAG, "Found a new allert, that is higher than the previous one will play it.");
+            AlertPlayer.getPlayer().stopAlert(true, false);
+            AlertPlayer.getPlayer().startAlert(context, newAlert);
+            return;
+            
+        } else {
+            AlertPlayer.getPlayer().stopAlert(true, false);
+        }
+        
+    }
+/*
+ * *****************************************************************************************************************
+ */
+    
+    // only function that is realy called from outside...
+    public void notificationSetter(Context context) {
+        ReadPerfs(context);
+        
+        FileBasedNotifications(context);
+        
         BgGraphBuilder bgGraphBuilder = new BgGraphBuilder(context);
         double high = bgGraphBuilder.highMark;
         double low = bgGraphBuilder.lowMark;
@@ -88,7 +200,7 @@ public class Notifications {
 
         if (bg_notifications && sensor != null) {
             if (bgGraphBuilder.unitized(bgReading.calculated_value) >= high || bgGraphBuilder.unitized(bgReading.calculated_value) <= low) {
-                bgAlert(bgReading.displayValue(mContext), bgReading.slopeArrow());
+                bgAlert(bgReading.displayValue(mContext), BgReading.slopeArrow());
             } else {
                 clearBgAlert();
             }
@@ -117,8 +229,37 @@ public class Notifications {
             clearAllCalibrationNotifications();
         }
     }
+    
+    public void periodicTimer(Context context) {
+        // This is the timer function that will be called every minute. It is used in order to replay alerts,
+        // execute snoozes and alert if we are not recieving data for a long time.
+        Log.e(TAG, "PeriodicTimer called");
+        ArmTimer(context, callbackPeriod);
+    }
+    
+    private void  ArmTimer(Context context, int time) {
+        Log.e(TAG, "ArmTimer called");
+        Intent intent = new Intent();
+        intent.setAction("com.eveningoutpost.dexdrip.UtilityModels.Notifications");
 
-    public static void soundAlert(String soundUri) {
+        AlarmManager alarmMgr = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+        PendingIntent alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
+
+        alarmMgr.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                SystemClock.elapsedRealtime() +
+                        time , alarmIntent);
+    }
+    
+    // TODO: Need to understand when we are calling this...
+    private void ClearTimer(Context context) {
+        Intent intent = new Intent();
+        intent.setAction("com.eveningoutpost.dexdrip.UtilityModels.Notifications");
+        PendingIntent.getBroadcast(context, 0, intent, 
+                PendingIntent.FLAG_UPDATE_CURRENT).cancel();
+    }
+
+
+    private void soundAlert(String soundUri) {
         manager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         int maxVolume = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
         currentVolume = manager.getStreamVolume(AudioManager.STREAM_MUSIC);
@@ -135,61 +276,63 @@ public class Notifications {
         player.start();
     }
 
-    public static void clearAllBgNotifications() {
+    private void clearAllBgNotifications() {
         notificationDismiss(BgNotificationId);
     }
-    public static void clearAllCalibrationNotifications() {
+
+    private void clearAllCalibrationNotifications() {
         notificationDismiss(calibrationNotificationId);
         notificationDismiss(extraCalibrationNotificationId);
         notificationDismiss(doubleCalibrationNotificationId);
     }
 
-
-    public static void bgNotificationCreate(String title, String content, Intent intent, int notificationId) {
+    private void bgNotificationCreate(String title, String content, Intent intent, int notificationId) {
         NotificationCompat.Builder mBuilder = notificationBuilder(title, content, intent);
         if (bg_vibrate) { mBuilder.setVibrate(vibratePattern);}
         if (bg_lights) { mBuilder.setLights(0xff00ff00, 300, 1000);}
         if (bg_sound && !bg_sound_in_silent) { mBuilder.setSound(Uri.parse(bg_notification_sound), AudioAttributes.FLAG_AUDIBILITY_ENFORCED);}
         if (bg_sound && bg_sound_in_silent) { soundAlert(bg_notification_sound);}
-        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(mContext.NOTIFICATION_SERVICE);
+        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotifyMgr.cancel(notificationId);
         mNotifyMgr.notify(notificationId, mBuilder.build());
     }
 
-    public static void calibrationNotificationCreate(String title, String content, Intent intent, int notificationId) {
+    private void calibrationNotificationCreate(String title, String content, Intent intent, int notificationId) {
         NotificationCompat.Builder mBuilder = notificationBuilder(title, content, intent);
         if (calibration_vibrate) { mBuilder.setVibrate(vibratePattern);}
         if (calibration_lights) { mBuilder.setLights(0xff00ff00, 300, 1000);}
         if (calibration_sound) { mBuilder.setSound(Uri.parse(calibration_notification_sound), AudioAttributes.FLAG_AUDIBILITY_ENFORCED);}
-        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(mContext.NOTIFICATION_SERVICE);
+        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotifyMgr.cancel(notificationId);
         mNotifyMgr.notify(notificationId, mBuilder.build());
     }
 
-    public static void notificationUpdate(String title, String content, Intent intent, int notificationId) {
+    private void notificationUpdate(String title, String content, Intent intent, int notificationId) {
         NotificationCompat.Builder mBuilder = notificationBuilder(title, content, intent);
-        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(mContext.NOTIFICATION_SERVICE);
+        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotifyMgr.notify(notificationId, mBuilder.build());
     }
 
-    public static NotificationCompat.Builder notificationBuilder(String title, String content, Intent intent) {
+    private NotificationCompat.Builder notificationBuilder(String title, String content, Intent intent) {
         return new NotificationCompat.Builder(mContext)
                 .setSmallIcon(R.drawable.ic_action_communication_invert_colors_on)
                 .setContentTitle(title)
                 .setContentText(content)
                 .setContentIntent(notificationIntent(intent));
     }
-    public static PendingIntent notificationIntent(Intent intent){
+    
+    private PendingIntent notificationIntent(Intent intent){
         return PendingIntent.getActivity(mContext, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
     }
 
-    public static void notificationDismiss(int notificationId) {
-        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(mContext.NOTIFICATION_SERVICE);
+    private void notificationDismiss(int notificationId) {
+        NotificationManager mNotifyMgr = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
         mNotifyMgr.cancel(notificationId);
     }
 
-    public static void bgAlert(String value, String slopeArrow) {
+    
+    private void bgAlert(String value, String slopeArrow) {
         UserNotification userNotification = UserNotification.lastBgAlert();
 
         if ((userNotification == null) || (userNotification.timestamp <= ((new Date().getTime()) - (60000 * bg_snooze)))) {
@@ -208,7 +351,7 @@ public class Notifications {
         }
     }
 
-    public static void calibrationRequest() {
+    private void calibrationRequest() {
         UserNotification userNotification = UserNotification.lastCalibrationAlert();
         if ((userNotification == null) || (userNotification.timestamp <= ((new Date().getTime()) - (60000 * calibration_snooze)))) {
             if (userNotification != null) { userNotification.delete(); }
@@ -219,7 +362,8 @@ public class Notifications {
             calibrationNotificationCreate(title, content, intent, calibrationNotificationId);
         }
     }
-    public static void doubleCalibrationRequest() {
+    
+    private void doubleCalibrationRequest() {
         UserNotification userNotification = UserNotification.lastDoubleCalibrationAlert();
         if ((userNotification == null) || (userNotification.timestamp <= ((new Date().getTime()) - (60000 * calibration_snooze)))) {
             if (userNotification != null) { userNotification.delete(); }
@@ -231,7 +375,7 @@ public class Notifications {
         }
     }
 
-    public static void extraCalibrationRequest() {
+    private void extraCalibrationRequest() {
         UserNotification userNotification = UserNotification.lastExtraCalibrationAlert();
         if ((userNotification == null) || (userNotification.timestamp <= ((new Date().getTime()) - (60000 * calibration_snooze)))) {
             if (userNotification != null) { userNotification.delete(); }
@@ -243,7 +387,7 @@ public class Notifications {
         }
     }
 
-    public static void clearCalibrationRequest() {
+    private void clearCalibrationRequest() {
         UserNotification userNotification = UserNotification.lastCalibrationAlert();
         if (userNotification != null) {
             userNotification.delete();
@@ -251,7 +395,7 @@ public class Notifications {
         }
     }
 
-    public static void clearDoubleCalibrationRequest() {
+    private void clearDoubleCalibrationRequest() {
         UserNotification userNotification = UserNotification.lastDoubleCalibrationAlert();
         if (userNotification != null) {
             userNotification.delete();
@@ -259,7 +403,7 @@ public class Notifications {
         }
     }
 
-    public static void clearExtraCalibrationRequest() {
+    private void clearExtraCalibrationRequest() {
         UserNotification userNotification = UserNotification.lastExtraCalibrationAlert();
         if (userNotification != null) {
             userNotification.delete();
@@ -267,7 +411,7 @@ public class Notifications {
         }
     }
 
-    public static void clearBgAlert() {
+    private void clearBgAlert() {
         UserNotification userNotification = UserNotification.lastBgAlert();
         if (userNotification != null) {
             userNotification.delete();

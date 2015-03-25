@@ -102,8 +102,17 @@
         </service>
 
         <activity
+            android:name=".SnoozeActivity"
+            android:label="@string/title_snooze" >
+        </activity>
+        
+        <activity
             android:name=".FakeNumbers"
             android:label="@string/title_activity_fake_numbers" >
+        </activity>
+        <activity
+            android:name=".EditAlertActivity"
+            android:label="@string/title_activity_edit_alert" >
         </activity>
         <activity
             android:name=".DoubleCalibrationActivity"
@@ -141,6 +150,12 @@
                 android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
                 android:resource="@xml/device_filter" />
         </activity>
+        
+        <receiver android:name="com.eveningoutpost.dexdrip.UtilityModels.NotificationsReceiver" >
+            <intent-filter>
+                <action android:name="com.eveningoutpost.dexdrip.UtilityModels.Notifications" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
