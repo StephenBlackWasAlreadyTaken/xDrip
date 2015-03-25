@@ -348,13 +348,8 @@ public class NightscoutUploader {
 
             if (dbURI != null && collectionName != null) {
                 try {
-
-                    // connect to db
-                    MongoClientURI uri = new MongoClientURI(dbURI.trim());
-                    MongoClient client = new MongoClient(uri);
-
                     // get db
-                    DB db = client.getDB(uri.getDatabase());
+                    DB db = NightscoutMongoClient.nightscoutGetDB(dbURI);
 
                     // get collection
                     DBCollection dexcomData = db.getCollection(collectionName.trim());
@@ -406,12 +401,11 @@ public class NightscoutUploader {
                     devicestatus.put("created_at", new Date());
                     dsCollection.insert(devicestatus, WriteConcern.UNACKNOWLEDGED);
 
-                    client.close();
-
                     return true;
 
                 } catch (Exception e) {
-                    Log.e(TAG, "Unable to upload data to mongo");
+                    NightscoutMongoClient.resetMongoConnection();
+                    Log.e(TAG, "Unable to upload data to mongo" + e);
                 }
             }
             return false;

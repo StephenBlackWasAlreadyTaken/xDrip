@@ -284,6 +284,16 @@ public class DexCollectionService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized or unspecified address.");
             return false;
         }
+        device = mBluetoothAdapter.getRemoteDevice(address);
+        if ((device != null) && (device.getType() != BluetoothDevice.DEVICE_TYPE_LE)) {
+            /* Non BLE device - start bluetooth reader thread;
+               Keep state machine with on CONNECTING state
+             */
+            Log.i(TAG, "non BLE device - start bluetooth reader");
+            BluetoothReader.startBluetoothReader(device, mContext);
+            return true;
+        }
+
         if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress)
                 && mBluetoothGatt != null) {
             Log.w(TAG, "Trying to use an existing mBluetoothGatt for connection.");
@@ -294,7 +304,7 @@ public class DexCollectionService extends Service {
                 return false;
             }
         }
-        device = mBluetoothAdapter.getRemoteDevice(address);
+
         if (device == null) {
             Log.w(TAG, "Device not found.  Unable to connect.");
             return false;
