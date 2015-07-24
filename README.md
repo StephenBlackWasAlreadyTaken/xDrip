@@ -2,9 +2,9 @@ xDrip
 =======
 ##### ** Please note this is __NOT__ a product created by or backed by Dexcom, you can check them out [here](http://dexcom.com/) **
 
-### Wirelessly with a Dexcom Share Receiver -- or -- Wireless xDrip bridge (No receiver!)
+#### Wirelessly with a Dexcom Share Receiver -- or -- Wireless xDrip bridge (No receiver!)
 
-
+#### Click here for the [Main Project Page](http://stephenblackwasalreadytaken.github.io/xDrip/)
 
 
 #### Access your Glucose levels from anywhere!
