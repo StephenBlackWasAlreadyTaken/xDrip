@@ -35,6 +35,8 @@
     <string name="action_example">Example action</string>
     <string name="title_activity_calibration_check_in">CalibrationCheckInActivity</string>
     <string name="title_activity_usb_connected">UsbConnectedActivity</string>
+    <string name="snooze">Snooze</string>
+    <string name="snooze_hint">Snooze alert for x minutes</string>
 
     <string-array name="menu_options">
         <item>Dex Drip</item>
@@ -50,10 +52,16 @@
     <string name="title_activity_main">MainActivity</string>
     <string name="title_activity_calibration_data_table">CalibrationDataTable</string>
     <string name="title_activity_fake_numbers">FakeNumbers</string>
+    <string name="title_activity_edit_alert">EditAlert</string>
+    <string name="title_snooze">Snooze</string>
     <string name="title_activity_double_calibration">DoubleCalibrationActivity</string>
     <string name="title_activity_calibration_override">CalibrationOverride</string>
     <string name="title_activity_calibration_graph">CalibrationGraph</string>
     <string name="pref_header_cloud_storage">Cloud Storage</string>
+    <string name="auto_configure_title">Auto configure</string>
+    <string name="prefs_auto_config_summary">Auto configure using a barcode. See http://nightscout.github.io/pages/configure/ for more details</string>
+    <string name="scan_share2_barcode">Scan Share Barcode</string>
+    <string name="pref_share2_scan_barcode_summary">Scan the barcode on the share receiver</string>
 
     <!-- MongoDB Settings -->
     <string name="pref_title_mongodb">MongoDB</string>
@@ -78,7 +86,7 @@
     <string name="pref_title_api_url">Base URL</string>
     <string name="pref_dialog_api_url">Enter Base API URL</string>
     <string name="pref_message_api_url">This only the base URL, the uploader will automatically append /entries for the POST.  API_SECRET on the server should match yourpassphrase in this setting.</string>
-    <string name="pref_default_api_url">yourpassphrase@https://{YOUR-SITE}.azurewebsites.net/api/v1</string>
+    <string name="pref_default_api_url">https://yourpassphrase@{YOUR-SITE}.azurewebsites.net/api/v1/</string>
 
     <!-- wifi Settings -->
     <string name="wifi_recievers_dialog_message">Comma separated list of ip:port (for example 37.142.132.220:50005,37.142.132.220:50010,mongodb://user:pass@ds053958.mongolab.com:53958/db/collection)</string>
@@ -93,5 +101,6 @@
     <string name="toast_crash">Something went wrong :( a report has been sent to help fix the issue.</string>
     <string name="appwidget_text">EXAMPLE</string>
     <string name="add_widget">Add widget</string>
+    <string name="title_activity_alert_list">AlertList</string>
 
 </resources>

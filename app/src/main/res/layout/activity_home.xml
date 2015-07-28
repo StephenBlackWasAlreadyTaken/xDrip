@@ -31,7 +31,7 @@
                     android:textAppearance="?android:attr/textAppearanceSmall"
                     android:textColor="#C30909"
                     android:id="@+id/notices"
-                    android:background="#07000000"
+                    android:background="#212121"
                     android:paddingEnd="10dp"
                     android:paddingStart="10dp"
                     android:gravity="left|top"
@@ -51,13 +51,25 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:background="#07000000"
+                    android:background="#212121"
                     android:id="@+id/currentBgValueRealTime"
                     android:gravity="right"
                     android:layout_alignParentEnd="true"
                     android:paddingEnd="20dp"
                     android:textSize="50dp"
                     android:paddingTop="0dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:attr/textAppearanceSmall"
+                    android:text="100%"
+                    android:id="@+id/textBridgeBattery"
+                    android:textStyle="normal"
+                    android:textSize="12sp"
+                    android:inputType="none"
+                    android:layout_below="@+id/notices"
+                    android:layout_alignParentStart="true" />
             </RelativeLayout>
 
             <lecho.lib.hellocharts.view.PreviewLineChartView
@@ -76,6 +88,5 @@
         android:layout_gravity="start"
         android:name="com.eveningoutpost.dexdrip.NavigationDrawerFragment"
         tools:layout="@layout/fragment_navigation_drawer" />
-
 </android.support.v4.widget.DrawerLayout>
 

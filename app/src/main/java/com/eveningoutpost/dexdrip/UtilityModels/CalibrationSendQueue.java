@@ -49,8 +49,8 @@ public class CalibrationSendQueue extends Model {
         return new Select()
                 .from(CalibrationSendQueue.class)
                 .where("mongo_success = ?", false)
-                .orderBy("_ID asc")
-                .limit(30)
+                .orderBy("_ID desc")
+                .limit(20)
                 .execute();
     }
     public static void addToQueue(Calibration calibration, Context context) {
@@ -59,13 +59,6 @@ public class CalibrationSendQueue extends Model {
         calibrationSendQueue.success = false;
         calibrationSendQueue.mongo_success = false;
         calibrationSendQueue.save();
-
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
-        if (prefs.getBoolean("cloud_storage_mongodb_enable", false) || prefs.getBoolean("cloud_storage_api_enable", false)) {
-            MongoSendTask task = new MongoSendTask(context, calibrationSendQueue);
-            task.execute();
-        }
     }
 
     public void markMongoSuccess() {

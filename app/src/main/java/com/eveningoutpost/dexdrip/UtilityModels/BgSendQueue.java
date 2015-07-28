@@ -1,5 +1,7 @@
 package com.eveningoutpost.dexdrip.UtilityModels;
 
+import android.appwidget.AppWidgetManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -16,8 +18,10 @@ import com.activeandroid.annotation.Column;
 import com.activeandroid.annotation.Table;
 import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.Services.SyncService;
 import com.eveningoutpost.dexdrip.ShareModels.ShareRest;
 import com.eveningoutpost.dexdrip.widgetUpdateService;
+import com.eveningoutpost.dexdrip.xDripWidget;
 
 import java.util.List;
 
@@ -61,69 +65,75 @@ public class BgSendQueue extends Model {
                 .from(BgSendQueue.class)
                 .where("mongo_success = ?", false)
                 .where("operation_type = ?", "create")
-                .orderBy("_ID asc")
+                .orderBy("_ID desc")
                 .limit(30)
                 .execute();
     }
 
     public static void addToQueue(BgReading bgReading, String operation_type, Context context) {
-        PowerManager powerManager = (PowerManager) context.getSystemService(context.POWER_SERVICE);
+        PowerManager powerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
         PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
                 "sendQueue");
         wakeLock.acquire();
+        try {
+            BgSendQueue bgSendQueue = new BgSendQueue();
+            bgSendQueue.operation_type = operation_type;
+            bgSendQueue.bgReading = bgReading;
+            bgSendQueue.success = false;
+            bgSendQueue.mongo_success = false;
+            bgSendQueue.save();
+            Log.d("BGQueue", "New value added to queue!");
 
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 
-        BgSendQueue bgSendQueue = new BgSendQueue();
-        bgSendQueue.operation_type = operation_type;
-        bgSendQueue.bgReading = bgReading;
-        bgSendQueue.success = false;
-        bgSendQueue.mongo_success = false;
-        bgSendQueue.save();
-        Log.d("BGQueue", "New value added to queue!");
+            Intent updateIntent = new Intent(Intents.ACTION_NEW_BG_ESTIMATE_NO_DATA);
+            context.sendBroadcast(updateIntent);
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
-        Intent updateIntent = new Intent(Intents.ACTION_NEW_BG_ESTIMATE_NO_DATA);
-        context.sendBroadcast(updateIntent);
-        context.startService(new Intent(context, widgetUpdateService.class));
-
-        if (prefs.getBoolean("cloud_storage_mongodb_enable", false) || prefs.getBoolean("cloud_storage_api_enable", false)) {
-            Log.w("SENSOR QUEUE:", String.valueOf(bgSendQueue.mongo_success));
-            if (operation_type.compareTo("create") == 0) {
-                MongoSendTask task = new MongoSendTask(context, bgSendQueue);
-                task.execute();
+            if(AppWidgetManager.getInstance(context).getAppWidgetIds(new ComponentName(context, xDripWidget.class)).length > 0){
+                context.startService(new Intent(context, widgetUpdateService.class));
             }
-        }
 
-        if(prefs.getBoolean("broadcast_data_through_intents", false)) {
-            Log.i("SENSOR QUEUE:", "Broadcast data");
-            final Bundle bundle = new Bundle();
-            bundle.putDouble(Intents.EXTRA_BG_ESTIMATE, bgReading.calculated_value);
-            bundle.putDouble(Intents.EXTRA_BG_SLOPE, bgReading.calculated_value_slope);
-            if(bgReading.hide_slope) {
-                bundle.putString(Intents.EXTRA_BG_SLOPE_NAME, "9");
-            } else {
-                bundle.putString(Intents.EXTRA_BG_SLOPE_NAME, bgReading.slopeName());
+            if (prefs.getBoolean("broadcast_data_through_intents", false)) {
+                Log.i("SENSOR QUEUE:", "Broadcast data");
+                final Bundle bundle = new Bundle();
+                bundle.putDouble(Intents.EXTRA_BG_ESTIMATE, bgReading.calculated_value);
+                bundle.putDouble(Intents.EXTRA_BG_SLOPE, bgReading.calculated_value_slope);
+                if (bgReading.hide_slope) {
+                    bundle.putString(Intents.EXTRA_BG_SLOPE_NAME, "9");
+                } else {
+                    bundle.putString(Intents.EXTRA_BG_SLOPE_NAME, bgReading.slopeName());
+                }
+                bundle.putInt(Intents.EXTRA_SENSOR_BATTERY, getBatteryLevel(context));
+                bundle.putLong(Intents.EXTRA_TIMESTAMP, bgReading.timestamp);
+
+                Intent intent = new Intent(Intents.ACTION_NEW_BG_ESTIMATE);
+                intent.putExtras(bundle);
+                intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+
+
+                context.sendBroadcast(intent, Intents.RECEIVER_PERMISSION);
+
+                //just keep it alive for 3 more seconds to allow the watch to be updated
+                // TODO: change NightWatch to not allow the system to sleep.
+                powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                        "broadcstNightWatch").acquire(3000);
+
             }
-            bundle.putInt(Intents.EXTRA_SENSOR_BATTERY, getBatteryLevel(context));
-            bundle.putLong(Intents.EXTRA_TIMESTAMP, bgReading.timestamp);
 
-            Intent intent = new Intent(Intents.ACTION_NEW_BG_ESTIMATE);
-            intent.putExtras(bundle);
-            context.sendBroadcast(intent, Intents.RECEIVER_PERMISSION);
-        }
+            if(prefs.getBoolean("broadcast_to_pebble", false)) {
+                context.startService(new Intent(context, PebbleSync.class));
+            }
 
-        if(prefs.getBoolean("broadcast_to_pebble", false)) {
-            PebbleSync pebbleSync = new PebbleSync();
-            pebbleSync.sendData(context, bgReading);
+            if (prefs.getBoolean("share_upload", false)) {
+                Log.w("ShareRest", "About to call ShareRest!!");
+                Intent shareIntent = new Intent(context, ShareRest.class);
+                shareIntent.putExtra("BgUuid", bgReading.uuid);
+                context.startService(shareIntent);
+            }
+            context.startService(new Intent(context, SyncService.class));
+        } finally {
+            wakeLock.release();
         }
-
-        if(prefs.getBoolean("share_upload", false)) {
-            ShareRest shareRest = new ShareRest(context);
-            Log.w("ShareRest", "About to call ShareRest!!");
-            shareRest.sendBgData(bgReading);
-        }
-        wakeLock.release();
     }
 
     public void markMongoSuccess() {

@@ -1,6 +1,7 @@
 package com.eveningoutpost.dexdrip.Services;
 
 import android.app.AlarmManager;
+import android.app.IntentService;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -23,44 +24,31 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-public class SyncService extends Service {
-    int mStartMode;
+public class SyncService extends IntentService {
     private Context mContext;
     private Boolean enableRESTUpload;
     private Boolean enableMongoUpload;
     private SharedPreferences prefs;
 
-    @Override
-    public void onCreate() {
-        Log.w("SYNC SERVICE:", "STARTING SERVICE");
+    public SyncService() {
+        super("SyncService");
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        attemptSend();
-        return START_STICKY;
-    }
-
-    @Override
-    public void onDestroy() {
-        setRetryTimer();
-        Log.w("SYNC SERVICE", "SERVICE STOPPED");
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
-
-    public void attemptSend() {
+    protected void onHandleIntent(Intent intent) {
+        Log.d("SYNC SERVICE:", "STARTING INTENT SERVICE");
         mContext = getApplicationContext();
         prefs = PreferenceManager.getDefaultSharedPreferences(mContext);
         enableRESTUpload = prefs.getBoolean("cloud_storage_api_enable", false);
         enableMongoUpload = prefs.getBoolean("cloud_storage_mongodb_enable", false);
+        setRetryTimer();
+        attemptSend();
+    }
 
+    public void attemptSend() {
         if (enableRESTUpload || enableMongoUpload) { syncToMogoDb(); }
 
-        if (false) {
+        if (false) { //Disabled for now as central server project has been abandoned for now
             for (SensorSendQueue job : SensorSendQueue.queue()) {
                 RestCalls.sendSensor(job);
             }
@@ -75,9 +63,11 @@ public class SyncService extends Service {
     }
 
     public void setRetryTimer() {
-        Calendar calendar = Calendar.getInstance();
-        AlarmManager alarm = (AlarmManager)getSystemService(ALARM_SERVICE);
-        alarm.set(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + (1000 * 30 * 5), PendingIntent.getService(this, 0, new Intent(this, SyncService.class), 0));
+        if (enableRESTUpload || enableMongoUpload) { //Check for any upload type being enabled
+            Calendar calendar = Calendar.getInstance();
+            AlarmManager alarm = (AlarmManager) getSystemService(ALARM_SERVICE);
+            alarm.set(alarm.RTC_WAKEUP, calendar.getTimeInMillis() + (1000 * 30 * 5), PendingIntent.getService(this, 0, new Intent(this, SyncService.class), 0));
+        }
     }
 
     public void syncToMogoDb() {

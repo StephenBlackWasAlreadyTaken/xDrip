@@ -10,14 +10,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
 import java.util.Date;
+import com.eveningoutpost.dexdrip.UtilityModels.AlertPlayer;
+import com.eveningoutpost.dexdrip.utils.ActivityWithMenu;
 
-
-public class StopSensor extends Activity implements NavigationDrawerFragment.NavigationDrawerCallbacks {
-    private String menu_name = "Stop Sensor";
-    private NavigationDrawerFragment mNavigationDrawerFragment;
-    public Button button;
+public class StopSensor extends ActivityWithMenu {
+    public static String menu_name = "Stop Sensor";
+   public Button button;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,16 +31,10 @@ public class StopSensor extends Activity implements NavigationDrawerFragment.Nav
             addListenerOnButton();
         }
     }
-    @Override
-    protected void onResume(){
-        super.onResume();
-        mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager().findFragmentById(R.id.navigation_drawer);
-        mNavigationDrawerFragment.setUp(R.id.navigation_drawer, (DrawerLayout) findViewById(R.id.drawer_layout), menu_name, this);
-    }
 
     @Override
-    public void onNavigationDrawerItemSelected(int position) {
-        mNavigationDrawerFragment.swapContext(position);
+    public String getMenuName() {
+        return menu_name;
     }
 
     public void addListenerOnButton() {
@@ -54,6 +47,7 @@ public class StopSensor extends Activity implements NavigationDrawerFragment.Nav
                 sensor.stopped_at = new Date().getTime();
                 Log.w("NEW SENSOR", "Sensor stopped at " + sensor.stopped_at);
                 sensor.save();
+                AlertPlayer.getPlayer().stopAlert(getApplicationContext(),true, false);
 
                 Toast.makeText(getApplicationContext(), "Sensor stopped", Toast.LENGTH_LONG).show();
                 Intent intent = new Intent(getApplicationContext(), Home.class);

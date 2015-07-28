@@ -13,10 +13,16 @@ import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.TimePicker;
 
+import com.eveningoutpost.dexdrip.Models.ActiveBgAlert;
+import com.eveningoutpost.dexdrip.Models.AlertType;
 import com.eveningoutpost.dexdrip.Models.BgReading;
+import com.eveningoutpost.dexdrip.utils.ActivityWithMenu;
 
+import java.util.Date;
 
-public class FakeNumbers extends Activity {
+public class FakeNumbers extends ActivityWithMenu {
+    public static String menu_name = "Fake Numbers";
+
     public Button button;
     public DatePicker dp;
     public TimePicker tp;
@@ -29,7 +35,10 @@ public class FakeNumbers extends Activity {
         addListenerOnButton();
 
     }
-
+    @Override
+    public String getMenuName() {
+        return menu_name;
+    }
     public void addListenerOnButton() {
 
         button = (Button)findViewById(R.id.log);
@@ -38,13 +47,37 @@ public class FakeNumbers extends Activity {
             public void onClick(View v) {
                 EditText value = (EditText) findViewById(R.id.bg_value);
                 int intValue = Integer.parseInt(value.getText().toString());
+                int filterdValue = intValue;
+                if (intValue > 200) {
+                    filterdValue = (int)(filterdValue * 1.2);
+                }
 
-                BgReading bgReading = BgReading.create(intValue * 1000, getApplicationContext(), new Date().getTime());
+                BgReading bgReading = BgReading.create(intValue * 1000, filterdValue* 1000,  getApplicationContext(), new Date().getTime());
                 Intent intent = new Intent(getApplicationContext(), Home.class);
                 startActivity(intent);
                 finish();
             }
 
+        });
+
+        button = (Button)findViewById(R.id.StartTest);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ActiveBgAlert aba = ActiveBgAlert.getOnly();
+                ActiveBgAlert.ClearData();
+                ActiveBgAlert.Create("some string", true, new Date().getTime());
+
+
+            }
+        });
+
+        button = (Button)findViewById(R.id.StartTestAlerts);
+        button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                AlertType.testAll(getApplicationContext());
+                BgReading.TestgetUnclearTimes();
+
+            }
         });
     }
 }

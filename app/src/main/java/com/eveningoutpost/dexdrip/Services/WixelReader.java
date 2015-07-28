@@ -5,6 +5,7 @@ import java.util.Date;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.LinkedList;
@@ -263,9 +264,10 @@ public class WixelReader  extends Thread {
             ComunicationHeader ch2 = gson.fromJson(flat, ComunicationHeader.class);
             System.out.println("Results code" + flat + ch2.version);
 
-
             // Real client code
-            Socket MySocket = new Socket(hostName, port);
+            InetSocketAddress ServerAdress = new InetSocketAddress(hostName, port);
+            Socket MySocket = new Socket();
+            MySocket.connect(ServerAdress, 10000);
 
             System.out.println("After the new socket \n");
             MySocket.setSoTimeout(2000);
@@ -335,11 +337,11 @@ public class WixelReader  extends Thread {
 	        		// Make sure we do not report packets from the far future...
 	        		if ((LastReading.CaptureDateTime > LastReportedTime ) &&
 	        		        (!almostEquals(LastReading, LastReportedReading)) &&
-	        		        LastReading.CaptureDateTime < new Date().getTime() + 12000) {
+	        		        LastReading.CaptureDateTime < new Date().getTime() + 120000) {
 	        			// We have a real new reading...
 	        			Log.e(TAG, "calling setSerialDataToTransmitterRawData " + LastReading.RawValue +
 	        			        " LastReading.CaptureDateTime " + LastReading.CaptureDateTime + " " + LastReading.TransmissionId);
-	        			setSerialDataToTransmitterRawData(LastReading.RawValue , LastReading.BatteryLife, LastReading.CaptureDateTime);
+	        			setSerialDataToTransmitterRawData(LastReading.RawValue,  LastReading.FilteredValue, LastReading.BatteryLife, LastReading.CaptureDateTime);
 	        			LastReportedReading = LastReading;
 	        			LastReportedTime = LastReading.CaptureDateTime;
 	        		}
@@ -362,13 +364,7 @@ public class WixelReader  extends Thread {
         int added = 5;
         while (!mStop) {
             try {
-                for (int j = 0 ; j < 3; j++) {
-                    Thread.sleep(1000);
-                    if(mStop ) {
-                    // we were asked to leave, so do it....
-                        return;
-                    }
-                }
+
                 i+=added;
                 if (i==50) {
                     added = -5;
@@ -377,9 +373,22 @@ public class WixelReader  extends Thread {
                     added = 5;
                 }
 
-                int fakedRaw = 150000 + i * 1000;
+                int fakedRaw = 100000 + i * 3000;
                 Log.e(TAG, "calling setSerialDataToTransmitterRawData " + fakedRaw);
-                setSerialDataToTransmitterRawData(fakedRaw, 100, new Date().getTime());
+                setSerialDataToTransmitterRawData(fakedRaw, fakedRaw ,100, new Date().getTime());
+                Log.e(TAG, "returned from setSerialDataToTransmitterRawData " + fakedRaw);
+
+                Long StartLoop = new Date().getTime();
+                for (int j = 0 ; j < 300; j++) {
+                    Thread.sleep(1000);
+                    Log.e(TAG, "looping ...." + i + " " + j + " " + (new Date().getTime() - StartLoop)/1000);
+                    if(mStop ) {
+                    // we were asked to leave, so do it....
+						Log.e(TAG, "EXITING mstop=true" );
+                        return;
+                    }
+                }
+
 
                } catch (InterruptedException e) {
                    // time to get out...
@@ -387,6 +396,7 @@ public class WixelReader  extends Thread {
                    break;
                }
         }
+		Log.e(TAG, "EXITING mstop=true" );
     }
 
     public void Stop()
@@ -394,13 +404,13 @@ public class WixelReader  extends Thread {
         mStop = true;
         interrupt();
     }
-    public void setSerialDataToTransmitterRawData(int raw_data ,int sensor_battery_leve, Long CaptureTime) {
+    public void setSerialDataToTransmitterRawData(int raw_data, int filtered_data ,int sensor_battery_leve, Long CaptureTime) {
 
         TransmitterData transmitterData = TransmitterData.create(raw_data, sensor_battery_leve, CaptureTime);
         if (transmitterData != null) {
             Sensor sensor = Sensor.currentSensor();
             if (sensor != null) {
-                BgReading bgReading = BgReading.create(transmitterData.raw_data, mContext, CaptureTime);
+                BgReading bgReading = BgReading.create(transmitterData.raw_data, filtered_data, mContext, CaptureTime);
                 sensor.latest_battery_level = transmitterData.sensor_battery_level;
                 sensor.save();
             } else {
