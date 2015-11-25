@@ -14,6 +14,10 @@ import com.eveningoutpost.dexdrip.R;
  * Helper for checking if location services are enabled on the device.
  */
 public class LocationHelper {
+    // Manually defining Marshmallow to maintain backwards API compatibility.
+    // http://developer.android.com/reference/android/os/Build.VERSION_CODES.html#M
+    private static final int MARSHMALLOW = 23;
+
     /**
      * Determine if GPS is currently enabled.
      *
@@ -60,8 +64,7 @@ public class LocationHelper {
      */
     public static void requestLocationForBluetooth(Activity activity) {
         // Location needs to be enabled for Bluetooth discovery on Marshmallow.
-        // To maintain compatibility with SDK 20, look for a version after lollipop.
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= MARSHMALLOW) {
             LocationHelper.requestLocation(activity);
         }
     }
