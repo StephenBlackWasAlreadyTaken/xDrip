@@ -25,6 +25,7 @@ import com.activeandroid.query.Select;
 import com.eveningoutpost.dexdrip.Models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.Services.DexCollectionService;
 import com.eveningoutpost.dexdrip.UtilityModels.CollectionServiceStarter;
+import com.eveningoutpost.dexdrip.utils.LocationHelper;
 
 import java.util.ArrayList;
 
@@ -75,6 +76,8 @@ public class BluetoothScan extends ListActivity implements NavigationDrawerFragm
                 }
             }
         }
+        // Will request that GPS be enabled for devices running Marshmallow or newer.
+        LocationHelper.requestLocationForBluetooth(this);
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
 
