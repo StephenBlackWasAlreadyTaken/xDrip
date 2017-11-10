@@ -33,6 +33,11 @@ Note, the following describes what I am currently using and recommend, it could 
  ![SETUP](http://i.imgur.com/EIGki5R.png)
  
  ## For the voltage measurement modification
+ 
+ **_Note: the instructions below show the resistors in reversed order. The 2.2kOhm resistor should be on the VIN side and the smaller 1kOhm on the GND side. For xDrip to show the voltage, the circuit needs to run xBridge2 (has it's own wiring diagram but also runs on the clasic circuit described on this page).
+Instructions for xBridge2 [can be found here](https://github.com/jstevensog/wixel-sdk/tree/master/apps/xBridge2) in xBridge2.pdf_**
+ 
+ 
  ###### If you have already built the xDrip and are adding this, follow this first step:
   * Remove the solder from the VIN and GND pins on the Wixel if possible using a solder sucker or solder wick.  If this is not possible, then you will have to work carefully by keeping the holes heated while inserting the resistors.  Keep in mind, if you do not have a controllable temperature soldering iron, you risk burning the board or the pads and ruining the Wixel.  **I highly recommend getting a solder sucker.**
   * You will need to grab a new copy of the Wixel code and upload it to your Wixel for this modification to work.  The process is the same as when you first loaded the code onto the Wixel, except you will need to click the "Erase Flash" button first.
