@@ -1,3 +1,5 @@
+**_Note: the instructions below for soldering your DIY bridge are for the older wixel-dexdrip code, which has been deprecated. The newer xDrip2.wxl firmware requires a different circuit and different resistors. Instructions for the new circuit [can be found here](https://github.com/jstevensog/wixel-sdk/tree/master/apps/xBridge2) in xBridge2.pdf_**
+
 ## What you need to get started
 Note, the following describes what I am currently using and recommend, it could definitely change and you can definitely use other components. Just know that this is all that it has been tested with!
 
